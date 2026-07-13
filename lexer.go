@@ -58,12 +58,24 @@ func (l *Lexer) dropLine() {
 	}
 }
 
-func (l *Lexer) NextToken() (*Token, bool) {
+func (l *Lexer) NextToken() (*Token) {
 	l.moveRight()
 
 	if l.isEmpty() {
 		// end of file
-		return &Token{}, false
+		return &Token{
+			value: "",
+			type_: EOFTokenType,
+		}
+	}
+	if l.source[l.cur] == ';' {
+		for l.isNotEmpty() && l.source[l.cur] != '\n'{
+			l.chop()
+		}
+		if l.isNotEmpty() {
+			l.chop()
+		}
+		return l.NextToken()
 	}
 
 	first := l.source[l.cur]
@@ -80,18 +92,19 @@ func (l *Lexer) NextToken() (*Token, bool) {
 			"if": IfTokenType,
 			"else": ElseTokenType,
 			"then":ThenTokenType,
+			"return": ReturnTokenType,
 		}
 		value := l.source[i:l.cur]
 		if val, ok := letterTokens[value]; ok {
 			return &Token{
 				type_: val,
 				value: value,
-			}, true
+			}
 		} else {
 			return &Token{
 				type_: NameTokenType,
 				value: value,
-			}, true
+			}
 		}
 	}
 
@@ -103,7 +116,7 @@ func (l *Lexer) NextToken() (*Token, bool) {
 		return &Token{
 			value: string(l.source[i:l.cur]),
 			type_: NumTokenType,
-		}, true
+		}
 	}
 
 	if first == '=' {
@@ -111,7 +124,7 @@ func (l *Lexer) NextToken() (*Token, bool) {
 		return &Token{
 			type_: EqTokenType,
 			value: "=",
-		}, true
+		}
 	}
 
 	unletterTokens := map[rune]TokenType{
@@ -131,12 +144,12 @@ func (l *Lexer) NextToken() (*Token, bool) {
 				return &Token{
 					value: ">=",
 					type_: EqMoreTokenType,
-				}, true
+				}
 			} else {
 				return &Token{
 					value: ">",
 					type_: MoreTokenType,
-				}, true
+				}
 			}
 			case LessTokenType:
 			if l.source[l.cur+1] == '=' {
@@ -144,18 +157,18 @@ func (l *Lexer) NextToken() (*Token, bool) {
 				return &Token{
 					value: "<=",
 					type_: EqLessTokenType,
-				}, true
+				}
 			} else {
 				return &Token{
 					value: "<",
 					type_: LessTokenType,
-				}, true
+				}
 			}
 			default:
 			return &Token{
 				value: string(first),
 				type_: v,
-			}, true
+			}
 		}
 	}
 
@@ -188,10 +201,13 @@ func (l *Lexer) NextToken() (*Token, bool) {
 			return &Token{
 				type_: StringTokenType,
 				value: string(value),
-			}, true
+			}
 		}
 	}
 
-	return nil, false
+	return &Token{
+		value: "",
+		type_: EOFTokenType,
+	}
 	//	panic("TODO next token")
 }
