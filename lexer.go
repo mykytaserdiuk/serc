@@ -4,62 +4,61 @@ import (
 	"unicode"
 )
 
-
-type Lexer struct{
+type Lexer struct {
 	source string
-	cur int
-	row int
+	cur    int
+	row    int
 }
 
-func NewLexer(source string) *Lexer{
+func NewLexer(source string) *Lexer {
 	return &Lexer{
 		source: source,
-		cur: 0,
-		row: 0,
+		cur:    0,
+		row:    0,
 	}
 }
 
-func (l *Lexer) isSpace() bool{
+func (l *Lexer) isSpace() bool {
 	// x:= l.source[l.cur]
 	//	return rune(x) == '\n' || rune(x) == '\t' || rune(x) == '\r'
 	return unicode.IsSpace(rune(l.source[l.cur]))
 }
 
-func (l *Lexer) isEmpty() bool{
+func (l *Lexer) isEmpty() bool {
 	return !l.isNotEmpty()
 }
 
-func (l *Lexer) isNotEmpty() bool{
+func (l *Lexer) isNotEmpty() bool {
 	return l.cur < len(l.source)
 }
 
-func (l *Lexer) moveRight(){
-	for(!l.isEmpty() && l.isSpace()) {
+func (l *Lexer) moveRight() {
+	for !l.isEmpty() && l.isSpace() {
 		l.chop()
 	}
 }
 
-func (l *Lexer) chop(){
+func (l *Lexer) chop() {
 	//fmt.Println(l.cur, len(l.source))
-	if(l.isNotEmpty()){
-		x:= l.source[l.cur]
-		l.cur = l.cur +1
-		if (x == '\n'){
-			l.row+=1
+	if l.isNotEmpty() {
+		x := l.source[l.cur]
+		l.cur = l.cur + 1
+		if x == '\n' {
+			l.row += 1
 		}
 	}
 }
 
-func (l *Lexer)  dropLine() {
-	if (l.isNotEmpty() && l.source[l.cur] != '\n'){
+func (l *Lexer) dropLine() {
+	if l.isNotEmpty() && l.source[l.cur] != '\n' {
 		l.chop()
 	}
-	if (l.isEmpty()) {
+	if l.isEmpty() {
 		l.chop()
 	}
 }
 
-func (l *Lexer) NextToken() (*Token, bool){
+func (l *Lexer) NextToken() (*Token, bool) {
 	l.moveRight()
 
 	if l.isEmpty() {
@@ -69,14 +68,15 @@ func (l *Lexer) NextToken() (*Token, bool){
 
 	first := l.source[l.cur]
 	//fmt.Print(first)
-	if unicode.IsLetter(rune(first)){
+	if unicode.IsLetter(rune(first)) {
 		i := l.cur
-		for l.isNotEmpty() && unicode.IsLetter(rune(l.source[l.cur])){
+		for l.isNotEmpty() && unicode.IsLetter(rune(l.source[l.cur])) {
 			l.chop()
 		}
-		letterTokens:= map[string]TokenType{
-			"end":EndTokenType,
-			"func":FuncTokenType,
+		letterTokens := map[string]TokenType{
+			"end":  EndTokenType,
+			"func": FuncTokenType,
+			"def":  DefTokenType,
 		}
 		value := l.source[i:l.cur]
 		if val, ok := letterTokens[value]; ok {
@@ -86,16 +86,36 @@ func (l *Lexer) NextToken() (*Token, bool){
 			}, true
 		} else {
 			return &Token{
-				type_ : NameTokenType,
+				type_: NameTokenType,
 				value: value,
 			}, true
 		}
 	}
 
-	unletterTokens:= map[rune]TokenType{
-		'(':OparenTokenType,
-		')':CparenTokenType,
-		':':ColonTokenType,
+	if unicode.IsNumber(rune(first)) {
+		i := l.cur
+		for l.isNotEmpty() && unicode.IsNumber(rune(l.source[l.cur])) {
+			l.chop()
+		}
+		return &Token{
+			value: string(l.source[i:l.cur]),
+			type_: NumTokenType,
+		}, true
+	}
+
+	if first == '=' {
+		l.chop()
+		return &Token{
+			type_: EqTokenType,
+			value: "=",
+		}, true
+	}
+
+	unletterTokens := map[rune]TokenType{
+		'(': OparenTokenType,
+		')': CparenTokenType,
+		':': ColonTokenType,
+		',': CommaTokenType,
 	}
 	if v, ok := unletterTokens[rune(first)]; ok {
 		l.chop()
@@ -105,22 +125,39 @@ func (l *Lexer) NextToken() (*Token, bool){
 		}, true
 	}
 
-	if first == '"'  {
+	if first == '"' {
 		l.chop()
-		i:= l.cur
-		for l.isNotEmpty() && l.source[l.cur] != '"'{
-			l.chop()
+		value := []byte{}
+		for l.isNotEmpty() && l.source[l.cur] != '"' {
+			if l.source[l.cur] == '\\'{
+				l.chop()
+				if l.isEmpty() {
+                    panic("ERROR: unclosed \\ on the end of file")
+                }
+
+				switch l.source[l.cur] {
+				case 'n':
+					value = append(value, '\n')
+				case 't':
+					value = append(value, '\t')
+				}
+				l.chop()
+			} else{
+				value = append(value, l.source[l.cur])
+				l.chop()
+			}
 		}
+
 		if l.isNotEmpty() {
-			value := l.source[i:l.cur]
+			//value = append(value, l.source[l.cur])
 			l.chop()
 			return &Token{
 				type_: StringTokenType,
-				value: value,
+				value: string(value),
 			}, true
 		}
 	}
 
-	return  nil, false
+	return nil, false
 	//	panic("TODO next token")
 }

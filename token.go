@@ -1,17 +1,22 @@
 package main
 
 type TokenType string
+
 const (
 	OparenTokenType TokenType = "oparen"
 	CparenTokenType TokenType = "cparen"
-	NameTokenType TokenType = "name"
-	ColonTokenType TokenType = "colon"
+	NameTokenType   TokenType = "name"
+	ColonTokenType  TokenType = "colon"
 	StringTokenType TokenType = "string"
-	EndTokenType TokenType = "end"
-	FuncTokenType TokenType = "func"
+	EndTokenType    TokenType = "end"
+	FuncTokenType   TokenType = "func"
+	DefTokenType    TokenType = "def"
+	NumTokenType    TokenType = "num"
+	EqTokenType     TokenType = "eq"
+	CommaTokenType TokenType = "comma"
 )
 
-type Token struct{
+type Token struct {
 	type_ TokenType
 	value string
 }

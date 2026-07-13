@@ -1,3 +1,10 @@
-func foo():
-     print("Hello world")
+func foo(x):
+     def jopa = "111"
+     print(x)
+     printf("HI : %s\n", jopa)
+end
+
+func main():
+     def data = 500
+     foo(data)
 end
