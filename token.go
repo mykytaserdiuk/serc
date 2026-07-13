@@ -14,6 +14,13 @@ const (
 	NumTokenType    TokenType = "num"
 	EqTokenType     TokenType = "eq"
 	CommaTokenType TokenType = "comma"
+	IfTokenType TokenType = "if"
+	ThenTokenType TokenType = "then"
+	ElseTokenType TokenType = "else"
+	MoreTokenType TokenType = "more"
+	LessTokenType TokenType = "less"
+	EqLessTokenType TokenType = "eqless"
+	EqMoreTokenType TokenType = "eqmore"
 )
 
 type Token struct {

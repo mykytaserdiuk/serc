@@ -77,6 +77,9 @@ func (l *Lexer) NextToken() (*Token, bool) {
 			"end":  EndTokenType,
 			"func": FuncTokenType,
 			"def":  DefTokenType,
+			"if": IfTokenType,
+			"else": ElseTokenType,
+			"then":ThenTokenType,
 		}
 		value := l.source[i:l.cur]
 		if val, ok := letterTokens[value]; ok {
@@ -116,13 +119,44 @@ func (l *Lexer) NextToken() (*Token, bool) {
 		')': CparenTokenType,
 		':': ColonTokenType,
 		',': CommaTokenType,
+		'>':MoreTokenType,
+		'<':LessTokenType,
 	}
 	if v, ok := unletterTokens[rune(first)]; ok {
 		l.chop()
-		return &Token{
-			value: string(first),
-			type_: v,
-		}, true
+		switch v{
+			case MoreTokenType:
+			if l.source[l.cur+1] == '=' {
+				l.chop()
+				return &Token{
+					value: ">=",
+					type_: EqMoreTokenType,
+				}, true
+			} else {
+				return &Token{
+					value: ">",
+					type_: MoreTokenType,
+				}, true
+			}
+			case LessTokenType:
+			if l.source[l.cur+1] == '=' {
+				l.chop()
+				return &Token{
+					value: "<=",
+					type_: EqLessTokenType,
+				}, true
+			} else {
+				return &Token{
+					value: "<",
+					type_: LessTokenType,
+				}, true
+			}
+			default:
+			return &Token{
+				value: string(first),
+				type_: v,
+			}, true
+		}
 	}
 
 	if first == '"' {

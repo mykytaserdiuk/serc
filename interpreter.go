@@ -27,9 +27,21 @@ func NewInterpreter(parser *Parser) *Interpreter {
 }
 
 func (i *Interpreter) execute(fn *Func) {
-	for _, b := range fn.body {
-		//		fmt.Printf("kind: %s \n", reflect.TypeOf(b))
-		switch s:= b.(type) {
+	i.exressionExecute(fn.body)
+}
+
+func (i *Interpreter) Main() {
+	mainFn := i.findFunc("main")
+	if mainFn == nil {
+		fmt.Printf("ERROR: cant find main func")
+		return
+	}
+	i.execute(mainFn)
+}
+
+func (i *Interpreter) exressionExecute(statements []Statement) {
+	for _, state := range statements{
+		switch s:= state.(type) {
 		case FuncCall:
 			switch s.name {
 			case "printf":
@@ -65,17 +77,15 @@ func (i *Interpreter) execute(fn *Func) {
 		case Assignment:
 			computedValue := i.eval(s.Value)
 			i.env.Set(s.VarName, computedValue)
+		case If:
+			binaryConditionResult := i.calculateBinary(s.Conditions)
+			if binaryConditionResult{
+				i.exressionExecute(s.Then.Statements)
+			} else if !binaryConditionResult && len(s.Then.Statements) > 0 {
+				i.exressionExecute(s.Else.Statements)
+			}
 		}
 	}
-}
-
-func (i *Interpreter) Main() {
-	mainFn := i.findFunc("main")
-	if mainFn == nil {
-		fmt.Printf("ERROR: cant find main func")
-		return
-	}
-	i.execute(mainFn)
 }
 
 func (i *Interpreter) findFunc(name string) *Func {
@@ -102,9 +112,47 @@ func (i *Interpreter) eval(expr Expression) any {
 	return nil
 }
 
+func (i *Interpreter) calculateBinary(bin Binary) bool {
+	lint := i.eval(bin.Left)
+	rightVal := i.eval(bin.Right)
+	switch v := lint.(type){
+		case int:
+		rint, ok := rightVal.(int)
+		if !ok{
+			panic("RUNTIME ERROR: expected 'int' at right part of binary")
+		}
+		switch bin.Op.type_{
+			case LessTokenType:
+			return  v < rint
+			case MoreTokenType:
+			return v>rint
+			case EqLessTokenType:
+			return v<=rint
+			case EqMoreTokenType:
+			return v>=rint
+		}
+		case string:
+		rStr, ok := rightVal.(string)
+		if !ok{
+			panic("RUNTIME ERROR: expected 'string' at right part of binary")
+		}
+		llen := len(v)
+		rlen := len(rStr)
+		switch bin.Op.type_{
+			case LessTokenType:
+			return  llen < rlen
+			case MoreTokenType:
+			return llen>rlen
+			case EqLessTokenType:
+			return llen<=rlen
+			case EqMoreTokenType:
+			return llen>=rlen
+		}
+	}
+	return false
+}
 
 // macros
-
 func (i *Interpreter) printf(format string, exps ...Expression) {
 	values := make([]any, len(exps))
 	for idx, e := range exps{

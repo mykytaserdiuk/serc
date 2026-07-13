@@ -11,8 +11,15 @@ type Variable struct {
 	name string
 }
 
+type Binary struct{
+	Left Expression
+	Op *Token
+	Right Expression
+}
+
 func (Variable) expression()      {}
 func (NumberLiteral) expression() {}
 func (StringLiteral) expression() {}
+func (Binary) expression(){}
 
-//func (Variable) expression(){}
+// //func (Variable) expression(){}

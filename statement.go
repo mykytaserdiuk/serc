@@ -13,3 +13,15 @@ type Assignment struct {
 }
 
 func (Assignment) statement() {}
+
+type Block struct{
+	Statements []Statement
+}
+
+type If struct {
+	Conditions Binary
+	Then Block
+	Else Block
+}
+
+func (If) statement() {}
