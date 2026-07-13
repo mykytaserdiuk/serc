@@ -79,7 +79,6 @@ func (l *Lexer) NextToken() (*Token) {
 	}
 
 	first := l.source[l.cur]
-	//fmt.Print(first)
 	if unicode.IsLetter(rune(first)) {
 		i := l.cur
 		for l.isNotEmpty() && unicode.IsLetter(rune(l.source[l.cur])) {

@@ -1,8 +1,20 @@
+func foo():
+     print("1")
+     return
+
+     print("2")
+end
+
 func main():
      def data = "1abc"
+     ; return
      if (100 > 10) then
         print("true")
      else
         print("false")
      end
+     foo()
+     ; return
+
+     print("Hi")
 end

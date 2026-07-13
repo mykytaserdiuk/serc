@@ -4,14 +4,12 @@ type FuncCall struct {
 	name string
 	args []Expression
 }
-
 func (FuncCall) statement() {}
 
 type Assignment struct {
 	VarName string
 	Value   Expression
 }
-
 func (Assignment) statement() {}
 
 type Block struct{
@@ -23,5 +21,9 @@ type If struct {
 	Then Block
 	Else Block
 }
-
 func (If) statement() {}
+
+type Return struct{
+	Value Expression
+}
+func (Return) statement(){}

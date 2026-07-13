@@ -26,13 +26,24 @@ type Parser struct {
 	l *Lexer
 }
 
-func (p *Parser) expectType(expectedTypes ...TokenType) (*Token, bool) {
-	token, ok := p.l.NextToken()
-	if ok {
-		for _, t := range expectedTypes {
-			if token.type_ == t {
-				return token, true
+func (p *Parser) goTo(expectedType TokenType) (*Token) {
+	for{
+		if token := p.l.NextToken(); token != nil{
+			if token.type_ == expectedType{
+				return token
 			}
+		} else{
+			break
+		}
+	}
+	return nil
+}
+
+func (p *Parser) expectType(expectedTypes ...TokenType) (*Token, bool) {
+	token:= p.l.NextToken()
+	for _, t := range expectedTypes {
+		if token.type_ == t {
+			return token, true
 		}
 	}
 	return token, false
@@ -79,14 +90,14 @@ func (p *Parser) parseBlock() (Block, *Token) {
 	var token *Token
 	var ok bool
 	for {
-		token, ok = p.expectType(NameTokenType, EndTokenType, ElseTokenType, DefTokenType, IfTokenType)
+		token, ok = p.expectType(NameTokenType, EOFTokenType, ReturnTokenType, EndTokenType, ElseTokenType, DefTokenType, IfTokenType)
 		if !ok {
-			fmt.Printf("ERROR: parse block: expected types: %+v,  got: %s\n", []TokenType{NameTokenType, EndTokenType, DefTokenType, ElseTokenType}, token.type_)
+			fmt.Printf("ERROR: parse block: expected types: %+v,  got: %s\n", []TokenType{NameTokenType, ReturnTokenType, EndTokenType, DefTokenType, ElseTokenType, EOFTokenType}, token.type_)
 			break
 		}
 		end := false
 		switch token.type_ {
-		case EndTokenType, ElseTokenType:
+		case EndTokenType, ElseTokenType, EOFTokenType:
 			end = true
 		case NameTokenType:
 			params := p.parseArgs()
@@ -94,6 +105,11 @@ func (p *Parser) parseBlock() (Block, *Token) {
 				name: token.value,
 				args: params,
 			})
+		case ReturnTokenType:
+			endToken := p.goTo(EndTokenType)
+			if endToken != nil{
+				end = true
+			}
 		case DefTokenType:
 			def, ok := p.parseDef()
 			if !ok {

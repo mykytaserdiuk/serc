@@ -21,6 +21,8 @@ const (
 	LessTokenType TokenType = "less"
 	EqLessTokenType TokenType = "eqless"
 	EqMoreTokenType TokenType = "eqmore"
+	ReturnTokenType TokenType = "return"
+	EOFTokenType TokenType = "EOF"
 )
 
 type Token struct {
