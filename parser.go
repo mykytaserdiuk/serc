@@ -24,9 +24,10 @@ type Func struct {
 
 type Parser struct {
 	l *Lexer
+	current *Token
 }
 
-func (p *Parser) goTo(expectedType TokenType) (*Token) {
+func (p *Parser) skipTo(expectedType TokenType) (*Token) {
 	for{
 		if token := p.l.NextToken(); token != nil{
 			if token.type_ == expectedType{
@@ -39,13 +40,35 @@ func (p *Parser) goTo(expectedType TokenType) (*Token) {
 	return nil
 }
 
-func (p *Parser) expectType(expectedTypes ...TokenType) (*Token, bool) {
-	token:= p.l.NextToken()
+func (p *Parser) expectPeek(expectedTypes ...TokenType) (*Token, bool){
+	token:= p.peek()
 	for _, t := range expectedTypes {
 		if token.type_ == t {
 			return token, true
 		}
 	}
+
+	return token, false
+}
+
+func (p *Parser) peek() *Token {
+	if p.current == nil {
+		p.current = p.l.NextToken()
+	}
+
+	return p.current
+}
+
+func (p *Parser) expectType(expectedTypes ...TokenType) (*Token, bool) {
+	token:= p.peek()
+	//fmt.Printf("%s\n", token.value)
+	for _, t := range expectedTypes {
+		if token.type_ == t {
+			p.current = nil
+			return token, true
+		}
+	}
+
 	return token, false
 }
 
@@ -71,13 +94,18 @@ func (p *Parser) parseFunc() *Func {
 		return nil
 	}
 
-	params := p.parseParams()
+	params, lastToken := p.parseParams()
+	if lastToken.type_ != CparenTokenType{
+		panic("ERROR: Expected close paren after params, but  got: "+lastToken.type_)
+	}
 	if colon, ok := p.expectType(ColonTokenType); !ok {
 		fmt.Printf("ERROR: parse func: expected type: %s, got %s\n", ColonTokenType, colon.type_)
 		return nil
 	}
-	block,_ := p.parseBlock()
-
+	block, closeToken := p.parseBlock()
+	if closeToken.type_ != EndTokenType{
+		panic("ERROR: expected end token on end of function")
+	}
 	return &Func{
 		name:   nameToken.value,
 		body:   block.Statements,
@@ -97,7 +125,9 @@ func (p *Parser) parseBlock() (Block, *Token) {
 		}
 		end := false
 		switch token.type_ {
-		case EndTokenType, ElseTokenType, EOFTokenType:
+		case EndTokenType, EOFTokenType:
+			end = true
+		case ElseTokenType:
 			end = true
 		case NameTokenType:
 			params := p.parseArgs()
@@ -106,9 +136,27 @@ func (p *Parser) parseBlock() (Block, *Token) {
 				args: params,
 			})
 		case ReturnTokenType:
-			endToken := p.goTo(EndTokenType)
-			if endToken != nil{
-				end = true
+			peekToken, ok := p.expectPeek(NameTokenType, StringTokenType, NumTokenType)
+			if !ok{
+				fmt.Printf("ERROR: parse block: return: expected types: %+v,  got: %s\n", []TokenType{NameTokenType, StringTokenType, NumTokenType}, peekToken.type_)
+				block = append(block, Return{
+					Value: nil,
+				})
+			}  else {
+				if token.line < peekToken.line {
+					block = append(block, Return{
+						Value: nil,
+					})
+				} else{
+					expToken, ok := p.expectType(NameTokenType, StringTokenType, NumTokenType)
+					if !ok {
+						panic("ERROR: parseBlock: return: Expected value after 'return'")
+					}
+					expression := p.parseExpression(expToken)
+					block = append(block, Return{
+						Value: expression,
+					})
+				}
 			}
 		case DefTokenType:
 			def, ok := p.parseDef()
@@ -171,11 +219,13 @@ func (p *Parser) parseIf() (If, bool) {
 		return If{}, false
 	}
 	elseBlock := Block{}
-	switch lastChoped.type_{
-		case ElseTokenType:
-		elseBlock,_ = p.parseBlock()
-		case EndTokenType:
-		break;
+	if lastChoped.type_ == ElseTokenType {
+		elseBlock, lastChoped = p.parseBlock()
+		if lastChoped.type_ != EndTokenType {
+			panic("expected end after else")
+		}
+	} else  {
+		panic("expected end")
 	}
 
 	return If{
@@ -194,7 +244,7 @@ func (p *Parser) parseIfConditions() (Binary, bool) {
 
 	left, ok := p.expectType(NumTokenType, StringTokenType, NameTokenType)
 	if !ok {
-		fmt.Printf("ERROR: parseIfCond: expected: %v, got: %s\n", []TokenType{NumTokenType, StringTokenType, NameTokenType}, open.type_)
+		fmt.Printf("ERROR: parseIfCond: left expected: %v, got: %s\n", []TokenType{NumTokenType, StringTokenType, NameTokenType}, open.type_)
 		return Binary{}, false
 	}
 
@@ -206,7 +256,7 @@ func (p *Parser) parseIfConditions() (Binary, bool) {
 
 	right, ok := p.expectType(NumTokenType, StringTokenType, NameTokenType)
 	if !ok {
-		fmt.Printf("ERROR: parseIfCond: expected: %v, got: %s\n", []TokenType{NumTokenType, StringTokenType, NameTokenType}, open.type_)
+		fmt.Printf("ERROR: parseIfCond: right expected: %v, got: %s\n", []TokenType{NumTokenType, StringTokenType, NameTokenType}, open.type_)
 		return Binary{}, false
 	}
 	rightEx := p.parseExpression(right)
@@ -233,10 +283,10 @@ func (p *Parser) parseLogicOperator(fnName string) (*Token, bool) {
 	return op, ok
 }
 
-func (p *Parser) parseParams() []string {
-	_, ok := p.expectType(OparenTokenType)
+func (p *Parser) parseParams() ([]string, *Token) {
+	token, ok := p.expectType(OparenTokenType)
 	if !ok {
-		return []string{}
+		return []string{}, token
 	}
 
 	params := []string{}
@@ -248,12 +298,12 @@ func (p *Parser) parseParams() []string {
 		)
 
 		if !ok {
-			return params
+			return params, token
 		}
 
 		switch token.type_ {
 		case CparenTokenType:
-			return params
+			return params, token
 
 		case NameTokenType:
 			params = append(params, token.value)

@@ -77,6 +77,9 @@ func (i *Interpreter) exressionExecute(statements []Statement) {
 		case Assignment:
 			computedValue := i.eval(s.Value)
 			i.env.Set(s.VarName, computedValue)
+		case Return:
+			fmt.Printf("RETURNED: %+v", s.Value)
+			return
 		case If:
 			binaryConditionResult := i.calculateBinary(s.Conditions)
 			if binaryConditionResult{

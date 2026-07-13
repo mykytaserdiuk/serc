@@ -98,11 +98,13 @@ func (l *Lexer) NextToken() (*Token) {
 			return &Token{
 				type_: val,
 				value: value,
+				line: l.row,
 			}
 		} else {
 			return &Token{
 				type_: NameTokenType,
 				value: value,
+				line: l.row,
 			}
 		}
 	}
@@ -123,6 +125,7 @@ func (l *Lexer) NextToken() (*Token) {
 		return &Token{
 			type_: EqTokenType,
 			value: "=",
+			line: l.row,
 		}
 	}
 
@@ -135,38 +138,45 @@ func (l *Lexer) NextToken() (*Token) {
 		'<':LessTokenType,
 	}
 	if v, ok := unletterTokens[rune(first)]; ok {
-		l.chop()
 		switch v{
 			case MoreTokenType:
 			if l.source[l.cur+1] == '=' {
 				l.chop()
+				l.chop()
 				return &Token{
 					value: ">=",
 					type_: EqMoreTokenType,
+					line: l.row,
 				}
 			} else {
 				return &Token{
 					value: ">",
 					type_: MoreTokenType,
+					line: l.row,
 				}
 			}
 			case LessTokenType:
 			if l.source[l.cur+1] == '=' {
 				l.chop()
+				l.chop()
 				return &Token{
 					value: "<=",
 					type_: EqLessTokenType,
+					line: l.row,
 				}
 			} else {
 				return &Token{
 					value: "<",
 					type_: LessTokenType,
+					line: l.row,
 				}
 			}
 			default:
+			l.chop()
 			return &Token{
 				value: string(first),
 				type_: v,
+				line: l.row,
 			}
 		}
 	}
@@ -200,6 +210,7 @@ func (l *Lexer) NextToken() (*Token) {
 			return &Token{
 				type_: StringTokenType,
 				value: string(value),
+				line: l.row,
 			}
 		}
 	}
@@ -207,6 +218,7 @@ func (l *Lexer) NextToken() (*Token) {
 	return &Token{
 		value: "",
 		type_: EOFTokenType,
+		line: l.row,
 	}
 	//	panic("TODO next token")
 }

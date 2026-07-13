@@ -28,4 +28,5 @@ const (
 type Token struct {
 	type_ TokenType
 	value string
+	line int
 }

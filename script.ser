@@ -2,19 +2,24 @@ func foo():
      print("1")
      return
 
-     print("2")
+     print("may dont print")
+end
+
+func ret():
+     return "name"
 end
 
 func main():
      def data = "1abc"
      ; return
-     if (100 > 10) then
+     if (100 >= 10) then
         print("true")
      else
         print("false")
      end
      foo()
-     ; return
+
+     ret()
 
      print("Hi")
 end
