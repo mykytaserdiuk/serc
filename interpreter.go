@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 )
 
 type Interpreter struct {
@@ -152,6 +153,8 @@ func (i *Interpreter) calculateBinary(bin Binary) bool {
 			return v<=rint
 			case EqMoreTokenType:
 			return v>=rint
+			case EqEqTokenType:
+			return  v == rint
 		}
 		case string:
 		rStr, ok := rightVal.(string)
@@ -169,9 +172,11 @@ func (i *Interpreter) calculateBinary(bin Binary) bool {
 			return llen<=rlen
 			case EqMoreTokenType:
 			return llen>=rlen
+			case EqEqTokenType:
+			return llen == rlen
 		}
 	}
-	return false
+	panic("Row " + strconv.Itoa(bin.Op.line) +": RUNTIME ERROR: Unexpected type to calculate binary")
 }
 
 // macros

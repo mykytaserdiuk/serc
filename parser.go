@@ -26,10 +26,15 @@ type Parser struct {
 	l *Lexer
 	current *Token
 }
+func (p *Parser) next() * Token{
+	t := p.l.NextToken()
+	// fmt.Printf("%s\n", t.value)
+	return t
+}
 
 func (p *Parser) skipTo(expectedType TokenType) (*Token) {
 	for{
-		if token := p.l.NextToken(); token != nil{
+		if token := p.next(); token != nil{
 			if token.type_ == expectedType{
 				return token
 			}
@@ -53,14 +58,14 @@ func (p *Parser) expectPeek(expectedTypes ...TokenType) (*Token, bool){
 
 func (p *Parser) peek() *Token {
 	if p.current == nil {
-		p.current = p.l.NextToken()
+		p.current = p.next()
 	}
 
 	return p.current
 }
 
 func (p *Parser) consume() *Token{
-	token:= p.l.NextToken()
+	token:= p.next()
 	//fmt.Printf("%s\n", token.value)
 	p.current = nil
 	return token
@@ -172,11 +177,6 @@ func (p *Parser) parseBlock() (Block, *Token) {
 					Value: nil,
 				})
 			}  else {
-				// if peekToken.type_ == EndTokenType{
-				//	block = append(block, Return{
-				//		Value: nil,
-				//	})
-				// }
 				if token.line < peekToken.line {
 					block = append(block, Return{
 						Value: nil,
@@ -296,7 +296,7 @@ func (p *Parser) parseIfConditions() (Binary, bool) {
 	rightEx := p.parseExpression(right)
 	close, ok := p.expectType(CparenTokenType)
 	if !ok {
-		fmt.Printf("ERROR: parseIf: expected: %s, got: %s\n", CparenTokenType, close.type_)
+		fmt.Printf("ERROR: parseIfCond: close: expected: %s, got: %s\n", CparenTokenType, close.type_)
 		return Binary{}, false
 	}
 
@@ -308,9 +308,9 @@ func (p *Parser) parseIfConditions() (Binary, bool) {
 }
 
 func (p *Parser) parseLogicOperator(fnName string) (*Token, bool) {
-	op, ok := p.expectType(MoreTokenType, LessTokenType, EqMoreTokenType, EqLessTokenType)
+	op, ok := p.expectType(MoreTokenType, EqEqTokenType, LessTokenType, EqMoreTokenType, EqLessTokenType)
 	if !ok {
-		fmt.Printf("ERROR: %s: expected: %v, got: %s\n", fnName, []TokenType{MoreTokenType, LessTokenType, EqMoreTokenType, EqLessTokenType}, op.type_)
+		fmt.Printf("ERROR: %s: expected: %v, got: %s\n", fnName, []TokenType{MoreTokenType, LessTokenType, EqEqTokenType, EqMoreTokenType, EqLessTokenType}, op.type_)
 		return op, false
 	}
 

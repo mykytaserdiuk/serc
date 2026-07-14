@@ -13,6 +13,7 @@ const (
 	DefTokenType    TokenType = "def"
 	NumTokenType    TokenType = "num"
 	EqTokenType     TokenType = "eq"
+	EqEqTokenType TokenType = "eqeq"
 	CommaTokenType TokenType = "comma"
 	IfTokenType TokenType = "if"
 	ThenTokenType TokenType = "then"

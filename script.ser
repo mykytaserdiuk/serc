@@ -9,7 +9,7 @@ func retNull():
      return
 end
 
-func retData():
+func returnData():
      return "test String"
 end
 
@@ -21,10 +21,9 @@ func main():
      data = retNull()
      printf("%s\n" data)
 
-     if (data >= "null") then
-        data = retData()
+     if (data == "null") then
+        data = returnData()
      end
 
      printf("%s\n" data)
-
 end

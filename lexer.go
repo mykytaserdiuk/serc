@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"unicode"
 )
 
@@ -121,7 +122,17 @@ func (l *Lexer) NextToken() (*Token) {
 	}
 
 	if first == '=' {
-		l.chop()
+		next := l.source[l.cur+1]
+				l.chop()
+		if next == '=' {
+			l.chop()
+			fmt.Println("==")
+			return &Token{
+				type_: EqEqTokenType,
+				value: "==",
+				line: l.row,
+			}
+		}
 		return &Token{
 			type_: EqTokenType,
 			value: "=",
