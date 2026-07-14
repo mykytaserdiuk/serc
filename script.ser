@@ -5,21 +5,26 @@ func foo():
      print("may dont print")
 end
 
-func ret():
-     return "name"
+func retNull():
+     return
+end
+
+func retData():
+     return "test String"
 end
 
 func main():
      def data = "1abc"
      ; return
-     if (100 >= 10) then
-        print("true")
-     else
-        print("false")
+     print(data)
+
+     data = retNull()
+     printf("%s\n" data)
+
+     if (data >= "null") then
+        data = retData()
      end
-     foo()
 
-     ret()
+     printf("%s\n" data)
 
-     print("Hi")
 end

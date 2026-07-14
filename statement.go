@@ -4,13 +4,20 @@ type FuncCall struct {
 	name string
 	args []Expression
 }
-func (FuncCall) statement() {}
+func (FuncCall) statement()  {}
+func (FuncCall) expression() {}
 
-type Assignment struct {
+type NewAssign struct {
 	VarName string
 	Value   Expression
 }
-func (Assignment) statement() {}
+func (NewAssign) statement() {}
+
+type Assign struct {
+	VarName string
+	Value   Expression
+}
+func (Assign) statement() {}
 
 type Block struct{
 	Statements []Statement

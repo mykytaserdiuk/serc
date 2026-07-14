@@ -17,9 +17,14 @@ type Binary struct{
 	Right Expression
 }
 
+type FuncResult struct{
+	Value Expression
+}
+
 func (Variable) expression()      {}
 func (NumberLiteral) expression() {}
 func (StringLiteral) expression() {}
 func (Binary) expression(){}
+func (FuncResult) expression(){}
 
 // //func (Variable) expression(){}

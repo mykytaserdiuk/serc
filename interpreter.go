@@ -26,8 +26,8 @@ func NewInterpreter(parser *Parser) *Interpreter {
 	}
 }
 
-func (i *Interpreter) execute(fn *Func) {
-	i.exressionExecute(fn.body)
+func (i *Interpreter) execute(fn *Func) FuncResult {
+	return i.exressionExecute(fn.body)
 }
 
 func (i *Interpreter) Main() {
@@ -39,7 +39,7 @@ func (i *Interpreter) Main() {
 	i.execute(mainFn)
 }
 
-func (i *Interpreter) exressionExecute(statements []Statement) {
+func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 	for _, state := range statements{
 		switch s:= state.(type) {
 		case FuncCall:
@@ -71,15 +71,23 @@ func (i *Interpreter) exressionExecute(statements []Statement) {
 							i.env.Set(argName, argsValues[idx])
 						}
 					}
-					i.execute(exFn)
+					return i.execute(exFn)
 				}
 			}
-		case Assignment:
+		case NewAssign:
 			computedValue := i.eval(s.Value)
 			i.env.Set(s.VarName, computedValue)
+		case Assign:
+			if _, ok := i.env.Get(s.VarName); !ok {
+				panic("RUNTIME ERROR: "+s.VarName + " is not defined")
+			}
+			computedValue := i.eval(s.Value)
+			//fmt.Printf("%T %+v", computedValue, computedValue)
+			i.env.Set(s.VarName, computedValue)
 		case Return:
-			fmt.Printf("RETURNED: %+v", s.Value)
-			return
+			return FuncResult{
+				Value: s.Value,
+			}
 		case If:
 			binaryConditionResult := i.calculateBinary(s.Conditions)
 			if binaryConditionResult{
@@ -89,7 +97,11 @@ func (i *Interpreter) exressionExecute(statements []Statement) {
 			}
 		}
 	}
+	return FuncResult{
+		Value: nil,
+	}
 }
+
 
 func (i *Interpreter) findFunc(name string) *Func {
 	if fn, ok := i.functions[name]; ok {
@@ -104,6 +116,13 @@ func (i *Interpreter) eval(expr Expression) any {
 		return e.value
 	case NumberLiteral:
 		return e.value
+	case FuncCall:
+		result:= i.execute(i.findFunc(e.name))
+		return i.eval(result)
+	case nil:
+		return "null"
+	case FuncResult:
+		return i.eval(e.Value)
 	case Variable:
 		val, ok := i.env.Get(e.name)
 		if !ok {
@@ -112,7 +131,7 @@ func (i *Interpreter) eval(expr Expression) any {
 		return val
 	}
 
-	return nil
+	return "null"
 }
 
 func (i *Interpreter) calculateBinary(bin Binary) bool {

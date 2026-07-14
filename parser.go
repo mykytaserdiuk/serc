@@ -59,6 +59,13 @@ func (p *Parser) peek() *Token {
 	return p.current
 }
 
+func (p *Parser) consume() *Token{
+	token:= p.l.NextToken()
+	//fmt.Printf("%s\n", token.value)
+	p.current = nil
+	return token
+}
+
 func (p *Parser) expectType(expectedTypes ...TokenType) (*Token, bool) {
 	token:= p.peek()
 	//fmt.Printf("%s\n", token.value)
@@ -130,19 +137,46 @@ func (p *Parser) parseBlock() (Block, *Token) {
 		case ElseTokenType:
 			end = true
 		case NameTokenType:
-			params := p.parseArgs()
-			block = append(block, FuncCall{
-				name: token.value,
-				args: params,
-			})
+			nextToken:= p.peek()
+			if nextToken.type_ == EqTokenType{
+				first:= p.consume()
+				if first.type_ == NameTokenType{
+					second := p.peek()
+					if second.type_ != OparenTokenType{
+						panic("ERROR: parseBlock: parse assign from return: expected: "+ OparenTokenType + " got: " + second.type_)
+					}
+					call := p.parseExpression(first)
+					block = append(block, Assign{
+						VarName: token.value,
+						Value:call,
+					})
+				} else {
+					expr := p.parseExpression(first)
+					block = append(block, Assign{
+						VarName: token.value,
+						Value: expr,
+					})
+				}
+			} else {
+				params := p.parseArgs()
+				block = append(block, FuncCall{
+					name: token.value,
+					args: params,
+				})
+			}
 		case ReturnTokenType:
-			peekToken, ok := p.expectPeek(NameTokenType, StringTokenType, NumTokenType)
+			peekToken, ok := p.expectPeek(NameTokenType, StringTokenType, NumTokenType, EndTokenType)
 			if !ok{
-				fmt.Printf("ERROR: parse block: return: expected types: %+v,  got: %s\n", []TokenType{NameTokenType, StringTokenType, NumTokenType}, peekToken.type_)
+				fmt.Printf("ERROR: parse block: return: expected types: %+v,  got: %s\n", []TokenType{NameTokenType, StringTokenType, NumTokenType, EndTokenType}, peekToken.type_)
 				block = append(block, Return{
 					Value: nil,
 				})
 			}  else {
+				// if peekToken.type_ == EndTokenType{
+				//	block = append(block, Return{
+				//		Value: nil,
+				//	})
+				// }
 				if token.line < peekToken.line {
 					block = append(block, Return{
 						Value: nil,
@@ -181,16 +215,16 @@ func (p *Parser) parseBlock() (Block, *Token) {
 	}, token
 }
 
-func (p *Parser) parseDef() (Assignment, bool){
+func (p *Parser) parseDef() (NewAssign, bool){
 	name, ok := p.expectType(NameTokenType)
 	if !ok {
 		fmt.Printf("ERROR: parseDef: expected: %s, got: %s\n", NameTokenType,name.type_)
-		return Assignment{}, false
+		return NewAssign{}, false
 	}
 	eq, eqok := p.expectType(EqTokenType)
 	if !eqok {
 		fmt.Printf("ERROR: parseDef: expected: %s, got: %s\n", EqTokenType, eq.type_)
-		return Assignment{}, false
+		return NewAssign{}, false
 	}
 	valToken, ok := p.expectType(NumTokenType, StringTokenType)
 	var exp Expression
@@ -198,7 +232,7 @@ func (p *Parser) parseDef() (Assignment, bool){
 		exp = p.parseExpression(valToken)
 	}
 
-	return Assignment{
+	return NewAssign{
 		VarName: name.value,
 		Value:   exp,
 	}, true
@@ -224,7 +258,7 @@ func (p *Parser) parseIf() (If, bool) {
 		if lastChoped.type_ != EndTokenType {
 			panic("expected end after else")
 		}
-	} else  {
+	} else if lastChoped.type_!= EndTokenType {
 		panic("expected end")
 	}
 
@@ -356,11 +390,18 @@ func (p *Parser) parseExpression(token *Token) Expression {
 				value: int(str),
 			}
 	case NameTokenType:
-		return  Variable{
-			name: token.value,
+		if _, ok := p.expectPeek(OparenTokenType); ok{
+			args := p.parseArgs()
+			return FuncCall{
+				name: token.value,
+				args: args,
+			}
+		}  else{
+			return  Variable{
+				name: token.value,
+			}
 		}
 	}
 
-	fmt.Printf("ERROR: unsupported expression type: %s", token.type_)
-	return nil
+	panic("ERROR: unsupported expression type: " + token.type_)
 }
