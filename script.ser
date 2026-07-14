@@ -19,11 +19,11 @@ func main():
      print(data)
 
      data = retNull()
-     printf("%s\n" data)
+     printf("%s\n", data)
 
-     if (data == "null") then
+     if (5+1 >= 6) then
         data = returnData()
      end
 
-     printf("%s\n" data)
+     printf("%s\n", data)
 end

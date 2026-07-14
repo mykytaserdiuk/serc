@@ -22,6 +22,10 @@ const (
 	LessTokenType TokenType = "less"
 	EqLessTokenType TokenType = "eqless"
 	EqMoreTokenType TokenType = "eqmore"
+
+	PlusTokenType TokenType = "plus"
+	MinusTokenType TokenType = "minus"
+
 	ReturnTokenType TokenType = "return"
 	EOFTokenType TokenType = "EOF"
 )
