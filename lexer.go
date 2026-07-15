@@ -161,6 +161,7 @@ func (l *Lexer) NextToken() (*Token) {
 					line: l.row,
 				}
 			} else {
+				l.chop()
 				return &Token{
 					value: ">",
 					type_: MoreTokenType,
@@ -177,6 +178,7 @@ func (l *Lexer) NextToken() (*Token) {
 					line: l.row,
 				}
 			} else {
+				l.chop()
 				return &Token{
 					value: "<",
 					type_: LessTokenType,

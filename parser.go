@@ -49,6 +49,8 @@ func (p *Parser) peek() *Token {
 }
 
 func (p *Parser) peekNext() *Token {
+	p.peek()
+
 	if p.nextTok == nil {
 		p.nextTok = p.next()
 	}
@@ -58,9 +60,10 @@ func (p *Parser) peekNext() *Token {
 
 // take current token and go
 func (p *Parser) advance() *Token {
-	token := p.peek()
+	t := p.peek()
 	p.current = nil
-	return token
+
+	return t
 }
 
 // check token, but dont take him
@@ -82,8 +85,7 @@ func (p *Parser) expect(types ...TokenType) (*Token, bool) {
 
 	for _, t := range types {
 		if token.type_ == t {
-			p.current = nil
-			return token, true
+			return p.advance(), true
 		}
 	}
 
@@ -368,6 +370,7 @@ func (p *Parser) parseAddition() Expression {
 		op := p.advance()
 
 		right := p.parsePrimary()
+
 		left = Binary{
 			Left:  left,
 			Op:    op,
@@ -379,6 +382,7 @@ func (p *Parser) parseAddition() Expression {
 
 func (p *Parser) parseComparation() Expression {
 	left := p.parseAddition()
+
 	for p.match(
 		MoreTokenType,
 		LessTokenType,
@@ -387,14 +391,15 @@ func (p *Parser) parseComparation() Expression {
 		EqLessTokenType,
 	) {
 		op := p.advance()
-
 		right := p.parseAddition()
+
 		left = Binary{
-			Left:  left,
-			Op:    op,
+			Left: left,
+			Op: op,
 			Right: right,
 		}
 	}
+
 	return left
 }
 
