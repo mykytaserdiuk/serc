@@ -72,7 +72,11 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 							i.env.Set(argName, argsValues[idx])
 						}
 					}
-					return i.execute(exFn)
+
+					result := i.execute(exFn)
+					if result.Value != nil {
+						return result
+					}
 				}
 			}
 		case NewAssign:
