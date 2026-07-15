@@ -57,7 +57,7 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 				for _, a := range s.args {
 					vals = append(vals, i.eval(a).Data)
 				}
-				fmt.Println(vals...)
+				fmt.Print(vals...)
 			default:
 				exFn := i.findFunc(s.name)
 				if exFn != nil {
@@ -96,10 +96,6 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 		case If:
 			conditions := i.eval(s.Conditions)
 			binaryConditionResult := conditions.Data.(bool)
-			//			if binaryConditionResult.Type != BoolValue {
-			//				panic("RUNTIME ERROR: Unexpected binary condition result: " + string(binaryConditionResult.Type))
-			//			}
-			//res := binaryConditionResult.Data.(bool)
 			if binaryConditionResult {
 				i.exressionExecute(s.Then.Statements)
 			} else if !binaryConditionResult && len(s.Then.Statements) > 0 {
@@ -166,6 +162,8 @@ func (i *Interpreter) evalBinary(bin Binary) Value {
 			return boolValue(lint >= rint)
 		case EqEqTokenType:
 			return boolValue(lint == rint)
+		case NotEqTokenType:
+			return boolValue(lint != rint)
 		case PlusTokenType:
 			return intValue(lint + rint)
 		case MinusTokenType:
@@ -190,7 +188,9 @@ func (i *Interpreter) evalBinary(bin Binary) Value {
 		case EqMoreTokenType:
 			return boolValue(llen >= rlen)
 		case EqEqTokenType:
-			return boolValue(llen == rlen)
+			return boolValue(lStr == rStr)
+		case NotEqTokenType:
+			return boolValue(lStr != rStr)
 		case PlusTokenType, MinusTokenType:
 			panic("RUNTIME ERROR: unexpected operator to string: '" + bin.Op.type_ + "'")
 		}

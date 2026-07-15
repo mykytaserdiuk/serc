@@ -160,7 +160,7 @@ func (l *Lexer) NextToken() (*Token) {
 					type_: EqMoreTokenType,
 					line: l.row,
 				}
-			} else {
+			}   else {
 				l.chop()
 				return &Token{
 					value: ">",
@@ -175,6 +175,14 @@ func (l *Lexer) NextToken() (*Token) {
 				return &Token{
 					value: "<=",
 					type_: EqLessTokenType,
+					line: l.row,
+				}
+			} else if l.source[l.cur+1] == '>'{
+				l.chop()
+				l.chop()
+				return &Token{
+					value: "<>",
+					type_: NotEqTokenType,
 					line: l.row,
 				}
 			} else {

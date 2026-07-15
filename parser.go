@@ -389,6 +389,7 @@ func (p *Parser) parseComparation() Expression {
 		EqEqTokenType,
 		EqMoreTokenType,
 		EqLessTokenType,
+		NotEqTokenType,
 	) {
 		op := p.advance()
 		right := p.parseAddition()

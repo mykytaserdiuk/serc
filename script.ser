@@ -1,8 +1,8 @@
 func foo():
-     print("1")
+     print("foo(): 1\n")
      return
 
-     print("may dont print")
+     print("foo(): may dont print\n")
 end
 
 func retNull():
@@ -17,14 +17,14 @@ end
 func main():
      def data = "1abc"
      ; return
-     print(data)
+     print("main():", data, "\n")
 
      data = retNull()
-     printf("%s\n", data)
+     printf("main(): %s\n", data)
 
-     if (5+1 >= 6) then
+     if (5+2 <> 6) then
         data = returnData()
      end
 
-     printf("%s\n", data)
+     printf("main(): %s\n", data)
 end

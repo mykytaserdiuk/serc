@@ -13,15 +13,17 @@ const (
 	DefTokenType    TokenType = "def"
 	NumTokenType    TokenType = "num"
 	EqTokenType     TokenType = "eq"
-	EqEqTokenType TokenType = "eqeq"
 	CommaTokenType TokenType = "comma"
 	IfTokenType TokenType = "if"
 	ThenTokenType TokenType = "then"
 	ElseTokenType TokenType = "else"
+
 	MoreTokenType TokenType = "more"
 	LessTokenType TokenType = "less"
 	EqLessTokenType TokenType = "eqless"
 	EqMoreTokenType TokenType = "eqmore"
+	EqEqTokenType TokenType = "eqeq"
+	NotEqTokenType TokenType = "noteq"
 
 	PlusTokenType TokenType = "plus"
 	MinusTokenType TokenType = "minus"
