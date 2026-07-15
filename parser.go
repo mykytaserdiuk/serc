@@ -5,16 +5,12 @@ import (
 	"strconv"
 )
 
-type Node interface{}
-type Statement interface {
-	Node
-	statement()
+type Program struct {
+    Functions map[string]*Func
+    Structs   map[string]*Structure
 }
 
-type Expression interface {
-	Node
-	expression()
-}
+type Node interface{}
 
 type Func struct {
 	name   string
@@ -92,6 +88,27 @@ func (p *Parser) expect(types ...TokenType) (*Token, bool) {
 	return token, false
 }
 
+func (p *Parser) parseProgram() Program {
+	program := Program{
+		Structs: make(map[string]*Structure),
+		Functions: make(map[string]*Func),
+	}
+	token := p.peek()
+	for token.type_ != EOFTokenType{
+		switch token.type_{
+			case FuncTokenType:
+			fn := p.parseFunc()
+			program.Functions[fn.name] = fn
+			case StructTokenType:
+			str := p.parseStruct()
+			program.Structs[str.Name] = str
+		}
+		token = p.peek()
+	}
+
+	return program
+}
+
 func (p *Parser) parseFunc() *Func {
 	_, ok := p.expect(FuncTokenType)
 	if !ok {
@@ -137,8 +154,8 @@ func (p *Parser) parseBlock() (Block, *Token) {
 		case NameTokenType:
 			nextToken := p.peekNext()
 			if nextToken.type_ == EqTokenType {
-				p.advance()
-				p.advance()
+				p.advance() // name
+				p.advance() // =
 				value := p.parseExpression()
 
 				block = append(block, Assign{
@@ -146,10 +163,9 @@ func (p *Parser) parseBlock() (Block, *Token) {
 					Value:   value,
 				})
 			} else if nextToken.type_ == OparenTokenType {
-				p.advance()
-				p.advance()
+				p.advance() // name
 				args := p.parseArgs()
-				block = append(block, FuncCall{
+				block = append(block, Call{
 					name: token.value,
 					args: args,
 				})
@@ -175,6 +191,10 @@ func (p *Parser) parseBlock() (Block, *Token) {
 			} else {
 				panic("CANT PARSE IF")
 			}
+		case StructTokenType:
+			p.advance()
+			str := p.parseStruct()
+			block = append(block, str)
 		}
 		if end {
 			break
@@ -196,15 +216,52 @@ func (p *Parser) parseDef() (NewAssign, bool) {
 		fmt.Printf("ERROR: parseDef: expected: %s, got: %s\n", EqTokenType, eq.type_)
 		return NewAssign{}, false
 	}
-	var exp Expression
-	if ok {
-		exp = p.parseExpression()
-	}
+
+	exp := p.parseExpression()
 
 	return NewAssign{
 		VarName: name.value,
 		Value:   exp,
 	}, true
+}
+
+func (p *Parser) parseStruct() *Structure{
+	p.advance() // chop 'struct'
+
+	name, ok := p.expect(NameTokenType)
+	if !ok{
+		panic("expected name literal after 'struct'")
+	}
+	fields := p.parseStructFields()
+	if len(fields) == 0 {
+		panic("struct must have a fields")
+	}
+	return &Structure{
+		Name: name.value,
+		Fields: fields,
+	}
+}
+
+func (p *Parser) parseStructFields() []string{
+	fields := []string{}
+	_, ok := p.expect(OparenTokenType)
+	if !ok {
+
+	}
+	end := false
+	for p.match(CparenTokenType, NameTokenType){
+		token := p.advance()
+		switch token.type_{
+			case CparenTokenType:
+			end = true
+			case NameTokenType:
+			fields = append(fields, token.value)
+		}
+		if end {
+			break
+		}
+	}
+	return fields
 }
 
 func (p *Parser) parseReturn(returnToken *Token) Return {
@@ -295,30 +352,42 @@ func (p *Parser) parseParams() ([]string, *Token) {
 	}
 }
 
-func (p *Parser) parseArgs() []Expression {
-	var args []Expression
-	if ok := p.match(CparenTokenType); ok {
-		p.advance()
-		return args
-	}
+func (p *Parser) parseArgs() []Argument {
+	var args []Argument
+    if !p.match(OparenTokenType) {
+        panic("expected '(' before args")
+    }
+    p.advance() // (
 
-	for {
-		arg := p.parseExpression()
-		args = append(args, arg)
+	for p.peek().type_ != CparenTokenType {
+		current := p.peek()
+		next := p.peekNext()
+		if current.type_ == NameTokenType && next.type_ == ColonTokenType{
+			name := p.advance() // name
+			p.advance() // :
+			argExpr := p.parseExpression()
+			args = append(args, Argument{
+				Name: name.value,
+				Value: argExpr,
+			})
+		} else {
+			exp := p.parseExpression()
+			args = append(args, Argument{
+				Value: exp,
+			})
+		}
 
 		if ok := p.match(CommaTokenType); ok {
 			p.advance()
 			continue
 		}
-
-		if p.match(CparenTokenType) {
-			p.advance()
-			break
-		}
 	}
+
+	p.advance()
 
 	return args
 }
+
 
 func (p *Parser) parsePrimary() Expression {
 	token, ok := p.expect(
@@ -345,9 +414,8 @@ func (p *Parser) parsePrimary() Expression {
 		}
 	case NameTokenType:
 		if ok := p.match(OparenTokenType); ok {
-			p.advance()
 			args := p.parseArgs()
-			return FuncCall{
+			return Call{
 				name: token.value,
 				args: args,
 			}
@@ -403,7 +471,7 @@ func (p *Parser) parseComparation() Expression {
 
 	return left
 }
-
 func (p *Parser) parseExpression() Expression {
-	return p.parseComparation()
+    exp := p.parseComparation()
+    return exp
 }

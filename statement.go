@@ -1,12 +1,22 @@
 package main
 
-type FuncCall struct {
-	name string
-	args []Expression
+type Statement interface {
+	Node
+	statement()
 }
 
-func (FuncCall) statement()  {}
-func (FuncCall) expression() {}
+type Argument struct{
+	Name string
+	Value Expression
+}
+
+type Call struct {
+	name string
+	args []Argument
+}
+
+func (Call) statement()  {}
+func (Call) expression() {}
 
 type NewAssign struct {
 	VarName string
@@ -39,3 +49,10 @@ type Return struct {
 }
 
 func (Return) statement() {}
+
+type Structure struct{
+	Name string
+	Fields []string
+}
+
+func (Structure) statement() {}

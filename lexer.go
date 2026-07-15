@@ -93,6 +93,7 @@ func (l *Lexer) NextToken() (*Token) {
 			"else": ElseTokenType,
 			"then":ThenTokenType,
 			"return": ReturnTokenType,
+			"struct": StructTokenType,
 		}
 		value := l.source[i:l.cur]
 		if val, ok := letterTokens[value]; ok {

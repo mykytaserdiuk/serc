@@ -7,22 +7,15 @@ import (
 
 type Interpreter struct {
 	functions map[string]*Func
+	structures map[string]*Structure
 	env       *Environment
 }
 
 func NewInterpreter(parser *Parser) *Interpreter {
-	funcs := make(map[string]*Func)
-	for {
-		if fn := parser.parseFunc(); fn != nil {
-			if _, ok := funcs[fn.name]; !ok {
-				funcs[fn.name] = fn
-			}
-		} else {
-			break
-		}
-	}
+	parsedProgram := parser.parseProgram()
 	return &Interpreter{
-		functions: funcs,
+		functions: parsedProgram.Functions,
+		structures: parsedProgram.Structs,
 		env:       NewEnvironment(),
 	}
 }
@@ -37,16 +30,17 @@ func (i *Interpreter) Main() {
 		fmt.Printf("ERROR: cant find main func")
 		return
 	}
+
 	i.execute(mainFn)
 }
 
 func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 	for _, state := range statements {
 		switch s := state.(type) {
-		case FuncCall:
+		case Call:
 			switch s.name {
 			case "printf":
-				format, ok := s.args[0].(StringLiteral)
+				format, ok := s.args[0].Value.(StringLiteral)
 				if !ok {
 					panic("RUNTIME ERROR: format isnt string")
 				}
@@ -55,7 +49,7 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 			case "print":
 				vals := make([]any, 0)
 				for _, a := range s.args {
-					vals = append(vals, i.eval(a).Data)
+					vals = append(vals, i.eval(a.Value).Data)
 				}
 				fmt.Print(vals...)
 			default:
@@ -64,7 +58,7 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 					argsValues := make([]Value, len(s.args))
 
 					for idx, argExpr := range s.args {
-						argsValues[idx] = i.eval(argExpr)
+						argsValues[idx] = i.eval(argExpr.Value)
 					}
 
 					for idx, argName := range exFn.params {
@@ -121,9 +115,8 @@ func (i *Interpreter) eval(expr Expression) Value {
 		return stringValue(e.value)
 	case NumberLiteral:
 		return intValue(e.value)
-	case FuncCall:
-		result := i.execute(i.findFunc(e.name))
-		return i.eval(result)
+	case Call:
+		return  i.evalCall(e)
 	case nil:
 		return nullValue()
 	case Binary:
@@ -139,6 +132,49 @@ func (i *Interpreter) eval(expr Expression) Value {
 	}
 
 	return nullValue()
+}
+
+func (i *Interpreter) evalCall(c Call) Value {
+	st, ok := i.structures[c.name]
+	if ok {
+		return i.createStruct(st, c.args)
+	}
+	fn := i.findFunc(c.name)
+	if fn != nil{
+		res := i.execute(fn)
+		return  i.eval(res)
+	}
+
+	panic("unknown call: " + c.name)
+}
+
+func (i *Interpreter) createStruct(str *Structure, args []Argument) Value {
+	obj := Object{
+		Type: str,
+		Fields: make(map[string]Value),
+	}
+
+	for _, arg := range args{
+		found := false
+		if arg.Name == "" {
+			panic("struct fields must be named")
+		}
+		for _, sArg := range str.Fields{
+			if arg.Name == sArg{
+				found = true
+			}
+		}
+		if !found {
+			panic("unknown field " + arg.Name +
+				" in struct " + str.Name)
+		}
+		obj.Fields[arg.Name] = i.eval(arg.Value)
+
+	}
+	return Value{
+		Type: ObjectValue,
+		Data: obj,
+	}
 }
 
 func (i *Interpreter) evalBinary(bin Binary) Value {
@@ -199,10 +235,10 @@ func (i *Interpreter) evalBinary(bin Binary) Value {
 }
 
 // macros
-func (i *Interpreter) printf(format string, exps ...Expression) {
+func (i *Interpreter) printf(format string, exps ...Argument) {
 	values := make([]any, len(exps))
 	for idx, e := range exps {
-		values[idx] = i.eval(e).Data
+		values[idx] = i.eval(e.Value).Data
 	}
 	fmt.Printf(format, values...)
 }

@@ -1,0 +1,12 @@
+struct User (
+       firstName
+       lastName
+)
+
+func main():
+     def data = User(
+         firstName: "Oleg"
+         lastName: "Vinnic"
+    )
+    printf("%+v, \n"data)
+end

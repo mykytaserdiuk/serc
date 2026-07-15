@@ -17,6 +17,7 @@ const (
 	IfTokenType TokenType = "if"
 	ThenTokenType TokenType = "then"
 	ElseTokenType TokenType = "else"
+	StructTokenType TokenType = "struct"
 
 	MoreTokenType TokenType = "more"
 	LessTokenType TokenType = "less"

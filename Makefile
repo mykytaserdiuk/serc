@@ -1,3 +1,5 @@
+run:
+	go run . ./examples/$(filter-out $@,$(MAKECMDGOALS))
 
-run: 
-	go run . ./examples/basement.ser
+%:
+	@:
