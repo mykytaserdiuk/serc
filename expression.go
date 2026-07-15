@@ -19,11 +19,11 @@ type Variable struct {
 }
 
 type Object struct {
-	Type *Structure
+	Type   *Structure
 	Fields map[string]Value
 }
 
-func (o Object) String() string{
+func (o Object) String() string {
 	result := o.Type.Name + "{"
 
 	first := true

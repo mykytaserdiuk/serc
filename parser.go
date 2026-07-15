@@ -6,8 +6,8 @@ import (
 )
 
 type Program struct {
-    Functions map[string]*Func
-    Structs   map[string]*Structure
+	Functions map[string]*Func
+	Structs   map[string]*Structure
 }
 
 type Node interface{}
@@ -90,16 +90,16 @@ func (p *Parser) expect(types ...TokenType) (*Token, bool) {
 
 func (p *Parser) parseProgram() Program {
 	program := Program{
-		Structs: make(map[string]*Structure),
+		Structs:   make(map[string]*Structure),
 		Functions: make(map[string]*Func),
 	}
 	token := p.peek()
-	for token.type_ != EOFTokenType{
-		switch token.type_{
-			case FuncTokenType:
+	for token.type_ != EOFTokenType {
+		switch token.type_ {
+		case FuncTokenType:
 			fn := p.parseFunc()
 			program.Functions[fn.name] = fn
-			case StructTokenType:
+		case StructTokenType:
 			str := p.parseStruct()
 			program.Structs[str.Name] = str
 		}
@@ -225,11 +225,11 @@ func (p *Parser) parseDef() (NewAssign, bool) {
 	}, true
 }
 
-func (p *Parser) parseStruct() *Structure{
+func (p *Parser) parseStruct() *Structure {
 	p.advance() // chop 'struct'
 
 	name, ok := p.expect(NameTokenType)
-	if !ok{
+	if !ok {
 		panic("expected name literal after 'struct'")
 	}
 	fields := p.parseStructFields()
@@ -237,24 +237,24 @@ func (p *Parser) parseStruct() *Structure{
 		panic("struct must have a fields")
 	}
 	return &Structure{
-		Name: name.value,
+		Name:   name.value,
 		Fields: fields,
 	}
 }
 
-func (p *Parser) parseStructFields() []string{
+func (p *Parser) parseStructFields() []string {
 	fields := []string{}
 	_, ok := p.expect(OparenTokenType)
 	if !ok {
 
 	}
 	end := false
-	for p.match(CparenTokenType, NameTokenType){
+	for p.match(CparenTokenType, NameTokenType) {
 		token := p.advance()
-		switch token.type_{
-			case CparenTokenType:
+		switch token.type_ {
+		case CparenTokenType:
 			end = true
-			case NameTokenType:
+		case NameTokenType:
 			fields = append(fields, token.value)
 		}
 		if end {
@@ -354,20 +354,20 @@ func (p *Parser) parseParams() ([]string, *Token) {
 
 func (p *Parser) parseArgs() []Argument {
 	var args []Argument
-    if !p.match(OparenTokenType) {
-        panic("expected '(' before args")
-    }
-    p.advance() // (
+	if !p.match(OparenTokenType) {
+		panic("expected '(' before args")
+	}
+	p.advance() // (
 
 	for p.peek().type_ != CparenTokenType {
 		current := p.peek()
 		next := p.peekNext()
-		if current.type_ == NameTokenType && next.type_ == ColonTokenType{
+		if current.type_ == NameTokenType && next.type_ == ColonTokenType {
 			name := p.advance() // name
-			p.advance() // :
+			p.advance()         // :
 			argExpr := p.parseExpression()
 			args = append(args, Argument{
-				Name: name.value,
+				Name:  name.value,
 				Value: argExpr,
 			})
 		} else {
@@ -387,7 +387,6 @@ func (p *Parser) parseArgs() []Argument {
 
 	return args
 }
-
 
 func (p *Parser) parsePrimary() Expression {
 	token, ok := p.expect(
@@ -463,8 +462,8 @@ func (p *Parser) parseComparation() Expression {
 		right := p.parseAddition()
 
 		left = Binary{
-			Left: left,
-			Op: op,
+			Left:  left,
+			Op:    op,
 			Right: right,
 		}
 	}
@@ -472,6 +471,6 @@ func (p *Parser) parseComparation() Expression {
 	return left
 }
 func (p *Parser) parseExpression() Expression {
-    exp := p.parseComparation()
-    return exp
+	exp := p.parseComparation()
+	return exp
 }

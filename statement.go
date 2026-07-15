@@ -5,8 +5,8 @@ type Statement interface {
 	statement()
 }
 
-type Argument struct{
-	Name string
+type Argument struct {
+	Name  string
 	Value Expression
 }
 
@@ -50,8 +50,8 @@ type Return struct {
 
 func (Return) statement() {}
 
-type Structure struct{
-	Name string
+type Structure struct {
+	Name   string
 	Fields []string
 }
 

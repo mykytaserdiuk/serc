@@ -6,17 +6,17 @@ import (
 )
 
 type Interpreter struct {
-	functions map[string]*Func
+	functions  map[string]*Func
 	structures map[string]*Structure
-	env       *Environment
+	env        *Environment
 }
 
 func NewInterpreter(parser *Parser) *Interpreter {
 	parsedProgram := parser.parseProgram()
 	return &Interpreter{
-		functions: parsedProgram.Functions,
+		functions:  parsedProgram.Functions,
 		structures: parsedProgram.Structs,
-		env:       NewEnvironment(),
+		env:        NewEnvironment(),
 	}
 }
 
@@ -116,7 +116,7 @@ func (i *Interpreter) eval(expr Expression) Value {
 	case NumberLiteral:
 		return intValue(e.value)
 	case Call:
-		return  i.evalCall(e)
+		return i.evalCall(e)
 	case nil:
 		return nullValue()
 	case Binary:
@@ -140,9 +140,9 @@ func (i *Interpreter) evalCall(c Call) Value {
 		return i.createStruct(st, c.args)
 	}
 	fn := i.findFunc(c.name)
-	if fn != nil{
+	if fn != nil {
 		res := i.execute(fn)
-		return  i.eval(res)
+		return i.eval(res)
 	}
 
 	panic("unknown call: " + c.name)
@@ -150,17 +150,17 @@ func (i *Interpreter) evalCall(c Call) Value {
 
 func (i *Interpreter) createStruct(str *Structure, args []Argument) Value {
 	obj := Object{
-		Type: str,
+		Type:   str,
 		Fields: make(map[string]Value),
 	}
 
-	for _, arg := range args{
+	for _, arg := range args {
 		found := false
 		if arg.Name == "" {
 			panic("struct fields must be named")
 		}
-		for _, sArg := range str.Fields{
-			if arg.Name == sArg{
+		for _, sArg := range str.Fields {
+			if arg.Name == sArg {
 				found = true
 			}
 		}

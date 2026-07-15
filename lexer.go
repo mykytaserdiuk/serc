@@ -58,7 +58,7 @@ func (l *Lexer) dropLine() {
 	}
 }
 
-func (l *Lexer) NextToken() (*Token) {
+func (l *Lexer) NextToken() *Token {
 	l.moveRight()
 
 	if l.isEmpty() {
@@ -66,11 +66,11 @@ func (l *Lexer) NextToken() (*Token) {
 		return &Token{
 			value: "",
 			type_: EOFTokenType,
-			line: l.row,
+			line:  l.row,
 		}
 	}
 	if l.source[l.cur] == ';' {
-		for l.isNotEmpty() && l.source[l.cur] != '\n'{
+		for l.isNotEmpty() && l.source[l.cur] != '\n' {
 			l.chop()
 		}
 		if l.isNotEmpty() {
@@ -86,12 +86,12 @@ func (l *Lexer) NextToken() (*Token) {
 			l.chop()
 		}
 		letterTokens := map[string]TokenType{
-			"end":  EndTokenType,
-			"func": FuncTokenType,
-			"def":  DefTokenType,
-			"if": IfTokenType,
-			"else": ElseTokenType,
-			"then":ThenTokenType,
+			"end":    EndTokenType,
+			"func":   FuncTokenType,
+			"def":    DefTokenType,
+			"if":     IfTokenType,
+			"else":   ElseTokenType,
+			"then":   ThenTokenType,
 			"return": ReturnTokenType,
 			"struct": StructTokenType,
 		}
@@ -100,13 +100,13 @@ func (l *Lexer) NextToken() (*Token) {
 			return &Token{
 				type_: val,
 				value: value,
-				line: l.row,
+				line:  l.row,
 			}
 		} else {
 			return &Token{
 				type_: NameTokenType,
 				value: value,
-				line: l.row,
+				line:  l.row,
 			}
 		}
 	}
@@ -124,19 +124,19 @@ func (l *Lexer) NextToken() (*Token) {
 
 	if first == '=' {
 		next := l.source[l.cur+1]
-				l.chop()
+		l.chop()
 		if next == '=' {
 			l.chop()
 			return &Token{
 				type_: EqEqTokenType,
 				value: "==",
-				line: l.row,
+				line:  l.row,
 			}
 		}
 		return &Token{
 			type_: EqTokenType,
 			value: "=",
-			line: l.row,
+			line:  l.row,
 		}
 	}
 
@@ -145,61 +145,61 @@ func (l *Lexer) NextToken() (*Token) {
 		')': CparenTokenType,
 		':': ColonTokenType,
 		',': CommaTokenType,
-		'>':MoreTokenType,
-		'<':LessTokenType,
-		'+':PlusTokenType,
-		'-':MinusTokenType,
+		'>': MoreTokenType,
+		'<': LessTokenType,
+		'+': PlusTokenType,
+		'-': MinusTokenType,
 	}
 	if v, ok := unletterTokens[rune(first)]; ok {
-		switch v{
-			case MoreTokenType:
+		switch v {
+		case MoreTokenType:
 			if l.source[l.cur+1] == '=' {
 				l.chop()
 				l.chop()
 				return &Token{
 					value: ">=",
 					type_: EqMoreTokenType,
-					line: l.row,
+					line:  l.row,
 				}
-			}   else {
+			} else {
 				l.chop()
 				return &Token{
 					value: ">",
 					type_: MoreTokenType,
-					line: l.row,
+					line:  l.row,
 				}
 			}
-			case LessTokenType:
+		case LessTokenType:
 			if l.source[l.cur+1] == '=' {
 				l.chop()
 				l.chop()
 				return &Token{
 					value: "<=",
 					type_: EqLessTokenType,
-					line: l.row,
+					line:  l.row,
 				}
-			} else if l.source[l.cur+1] == '>'{
+			} else if l.source[l.cur+1] == '>' {
 				l.chop()
 				l.chop()
 				return &Token{
 					value: "<>",
 					type_: NotEqTokenType,
-					line: l.row,
+					line:  l.row,
 				}
 			} else {
 				l.chop()
 				return &Token{
 					value: "<",
 					type_: LessTokenType,
-					line: l.row,
+					line:  l.row,
 				}
 			}
-			default:
+		default:
 			l.chop()
 			return &Token{
 				value: string(first),
 				type_: v,
-				line: l.row,
+				line:  l.row,
 			}
 		}
 	}
@@ -208,11 +208,11 @@ func (l *Lexer) NextToken() (*Token) {
 		l.chop()
 		value := []byte{}
 		for l.isNotEmpty() && l.source[l.cur] != '"' {
-			if l.source[l.cur] == '\\'{
+			if l.source[l.cur] == '\\' {
 				l.chop()
 				if l.isEmpty() {
-                    panic("ERROR: unclosed \\ on the end of file")
-                }
+					panic("ERROR: unclosed \\ on the end of file")
+				}
 
 				switch l.source[l.cur] {
 				case 'n':
@@ -221,7 +221,7 @@ func (l *Lexer) NextToken() (*Token) {
 					value = append(value, '\t')
 				}
 				l.chop()
-			} else{
+			} else {
 				value = append(value, l.source[l.cur])
 				l.chop()
 			}
@@ -233,7 +233,7 @@ func (l *Lexer) NextToken() (*Token) {
 			return &Token{
 				type_: StringTokenType,
 				value: string(value),
-				line: l.row,
+				line:  l.row,
 			}
 		}
 	}
@@ -241,7 +241,7 @@ func (l *Lexer) NextToken() (*Token) {
 	return &Token{
 		value: "",
 		type_: EOFTokenType,
-		line: l.row,
+		line:  l.row,
 	}
 	//	panic("TODO next token")
 }
