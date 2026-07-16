@@ -8,6 +8,7 @@ import (
 type Program struct {
 	Functions map[string]*Func
 	Structs   map[string]*Structure
+	Imports   map[string]Import
 }
 
 type Node interface{}
@@ -92,6 +93,7 @@ func (p *Parser) parseProgram() Program {
 	program := Program{
 		Structs:   make(map[string]*Structure),
 		Functions: make(map[string]*Func),
+		Imports:   make(map[string]Import),
 	}
 	token := p.peek()
 	for token.type_ != EOFTokenType {
@@ -102,6 +104,9 @@ func (p *Parser) parseProgram() Program {
 		case StructTokenType:
 			str := p.parseStruct()
 			program.Structs[str.Name] = str
+		case UseTokenType:
+			use := p.parseUse()
+			program.Imports[use.Name] = use
 		}
 		token = p.peek()
 	}
@@ -161,7 +166,6 @@ func (p *Parser) parseBlock() (Block, *Token) {
 					Target: target,
 					Value:  value,
 				})
-
 			} else {
 				switch e := target.(type) {
 				case Call:
@@ -256,6 +260,36 @@ func (p *Parser) parseStructFields() []string {
 		}
 	}
 	return fields
+}
+
+func (p *Parser) parseUse() Import {
+	p.advance() // use
+	name := p.parsePrimary()
+	var useName string
+	var alias string
+	switch t := name.(type) {
+	case Variable:
+		useName = t.name
+	default:
+		panic(fmt.Sprintf("expected name of use got: %T", t))
+	}
+
+	ok := p.match(StringTokenType)
+	if !ok {
+		alias = useName
+	} else {
+		aliasExp := p.parsePrimary()
+		if aliasVal, ok := aliasExp.(StringLiteral); !ok {
+			panic(fmt.Sprintf("as alias cab be only string literal, got: %T", aliasExp))
+		} else {
+			alias = aliasVal.value
+		}
+	}
+
+	return Import{
+		Alias: alias,
+		Name:  useName,
+	}
 }
 
 func (p *Parser) parseReturn(returnToken *Token) Return {
@@ -400,43 +434,41 @@ func (p *Parser) parsePrimary() Expression {
 	case NumTokenType:
 		str, err := strconv.ParseInt(token.value, 10, 64)
 		if err != nil {
-			fmt.Printf("ERROR: parseExpression: cant conver int to str\n")
-			return nil
+			panic("ERROR: parseExpression: cant convert int")
 		}
+
 		expr = NumberLiteral{
 			value: int(str),
 		}
 	case NameTokenType:
-		if ok := p.match(OparenTokenType); ok {
+		expr = Variable{
+			name: token.value,
+		}
+
+		for p.match(DotTokenType) {
+			p.advance() // .
+
+			name, ok := p.expect(NameTokenType)
+			if !ok {
+				panic("expected name after '.'")
+			}
+
+			expr = FieldAccess{
+				Value: expr,
+				Name:  name.value,
+			}
+		}
+
+		if p.peek().type_ == OparenTokenType {
 			args := p.parseArgs()
 			expr = Call{
-				name: token.value,
-				args: args,
-			}
-		} else {
-			expr = Variable{
-				name: token.value,
+				Target: expr,
+				args:   args,
 			}
 		}
 	}
 
-	for p.match(DotTokenType) {
-		p.advance() // .
-		name, ok := p.expect(NameTokenType)
-		if !ok {
-			panic("expected field name after '.'")
-		}
-		expr = FieldAccess{
-			Value: expr,
-			Name:  name.value,
-		}
-	}
-
-	if expr != nil {
-		return expr
-	}
-
-	panic("ERROR: unsupported expression type: " + token.type_)
+	return expr
 }
 
 func (p *Parser) parseAddition() Expression {

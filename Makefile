@@ -1,5 +1,5 @@
 run:
-	go run . ./examples/$(filter-out $@,$(MAKECMDGOALS))
+	go run . ./examples/$(filter-out $@,$(MAKECMDGOALS)).ser
 
 %:
 	@:

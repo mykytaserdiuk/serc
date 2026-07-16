@@ -87,8 +87,8 @@ func (l *Lexer) NextToken() *Token {
 		}
 		letterTokens := map[string]TokenType{
 			"end":    EndTokenType,
-			"func":   FuncTokenType,
 			"def":    DefTokenType,
+			"func":   FuncTokenType,
 			"if":     IfTokenType,
 			"else":   ElseTokenType,
 			"then":   ThenTokenType,

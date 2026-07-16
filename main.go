@@ -18,12 +18,7 @@ func main() {
 	}
 
 	content := string(file)
-	lexer := NewLexer(content)
 
-	parser := &Parser{
-		l: lexer,
-	}
-
-	interpreter := NewInterpreter(parser)
+	interpreter := NewInterpreter(content)
 	interpreter.Main()
 }

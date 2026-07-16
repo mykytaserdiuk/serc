@@ -1,0 +1,5 @@
+use math
+
+func main():
+     printf("%+v\n", math.add(1, 5))
+end

@@ -11,8 +11,29 @@ type Interpreter struct {
 	env        *Environment
 }
 
-func NewInterpreter(parser *Parser) *Interpreter {
-	parsedProgram := parser.parseProgram()
+func NewInterpreter(content string) *Interpreter {
+	mainParser := &Parser{
+		l: NewLexer(content),
+	}
+
+	moduleLoader := ModuleLoader{
+		loaded: make(map[string]*Program),
+	}
+	parsedProgram := mainParser.parseProgram()
+	for _, imp := range parsedProgram.Imports {
+		module := moduleLoader.Load(imp.Name)
+		for _, mStr := range module.Structs {
+			stName := imp.Alias + "." + mStr.Name
+			fmt.Println(stName, "improted")
+			parsedProgram.Structs[stName] = mStr
+		}
+		for _, mFn := range module.Functions {
+			fnName := imp.Alias + "." + mFn.name
+			fmt.Println(fnName, "improted")
+			parsedProgram.Functions[fnName] = mFn
+		}
+	}
+
 	return &Interpreter{
 		functions:  parsedProgram.Functions,
 		structures: parsedProgram.Structs,
@@ -38,7 +59,7 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 	for _, state := range statements {
 		switch s := state.(type) {
 		case Call:
-			switch s.name {
+			switch s.Name() {
 			case "printf":
 				format, ok := s.args[0].Value.(StringLiteral)
 				if !ok {
@@ -53,7 +74,7 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 				}
 				fmt.Print(vals...)
 			default:
-				exFn := i.findFunc(s.name)
+				exFn := i.findFunc(s.Name())
 				if exFn != nil {
 					argsValues := make([]Value, len(s.args))
 
@@ -113,8 +134,6 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 			} else if !binaryConditionResult && len(s.Then.Statements) > 0 {
 				i.exressionExecute(s.Else.Statements)
 			}
-		case StructureCall:
-			fmt.Printf(s.Name, s.Value)
 		}
 	}
 	return FuncResult{
@@ -170,12 +189,12 @@ func (i *Interpreter) eval(expr Expression) Value {
 }
 
 func (i *Interpreter) evalCall(c Call) Value {
-	st, ok := i.structures[c.name]
+	st, ok := i.structures[c.Name()]
 	if ok {
 		return i.createStruct(st, c.args)
 	}
 
-	fn := i.findFunc(c.name)
+	fn := i.findFunc(c.Name())
 	if fn != nil {
 		args := make([]Value, len(c.args))
 
@@ -192,13 +211,17 @@ func (i *Interpreter) evalCall(c Call) Value {
 		}
 
 		res := i.execute(fn)
-		i.env = oldEnv
+
+		var result Value
 		if res.Value == nil {
-			return nullValue()
+			result = nullValue()
+		} else {
+			result = i.eval(res.Value)
 		}
-		return i.eval(res.Value)
+		i.env = oldEnv
+		return result
 	}
-	panic("unknown call: " + c.name)
+	panic("unknown call: " + c.Name())
 }
 func (i *Interpreter) createStruct(str *Structure, args []Argument) Value {
 	obj := Object{

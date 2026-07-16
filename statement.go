@@ -11,12 +11,30 @@ type Argument struct {
 }
 
 type Call struct {
-	name string
-	args []Argument
+	Target Expression
+	args   []Argument
 }
 
 func (Call) statement()  {}
 func (Call) expression() {}
+func (c Call) Name() string {
+	return expressionName(c.Target)
+}
+
+func expressionName(expr Expression) string {
+	switch t := expr.(type) {
+	case Variable:
+		return t.name
+	case FieldAccess:
+		left := expressionName(t.Value)
+		if left == "" {
+			return t.Name
+		}
+		return left + "." + t.Name
+	}
+
+	return ""
+}
 
 type NewAssign struct {
 	VarName string
@@ -55,9 +73,9 @@ type Structure struct {
 	Fields []string
 }
 
-type StructureCall struct {
+type Import struct {
 	Name  string
-	Value Expression
+	Alias string
 }
 
-func (StructureCall) statement() {}
+func (Import) statement() {}
