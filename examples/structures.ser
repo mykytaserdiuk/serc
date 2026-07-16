@@ -8,5 +8,7 @@ func main():
          firstName: "Oleg"
          lastName: "Vinnic"
     )
-    printf("%+v, \n"data)
+    printf("%+v \n", data.firstName)
+    data.firstName = "Daniel"
+    printf("%+v \n", data.firstName)
 end

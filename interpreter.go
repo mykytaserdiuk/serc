@@ -77,12 +77,30 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 			computedValue := i.eval(s.Value)
 			i.env.Set(s.VarName, computedValue)
 		case Assign:
-			if _, ok := i.env.Get(s.VarName); !ok {
-				panic("RUNTIME ERROR: " + s.VarName + " is not defined")
+			value := i.eval(s.Value)
+			switch t := s.Target.(type) {
+			case Variable:
+				fmt.Println(s.Value)
+				v, ok := i.env.Get(t.name)
+				if !ok {
+					panic("RUNTIME ERROR: variable '" + t.name + "' not found")
+				}
+				v.Data = value
+				i.env.Set(t.name, v)
+			case FieldAccess:
+				obj := i.eval(t.Value)
+
+				switch data := obj.Data.(type) {
+				case Object:
+					_, ok := data.Fields[t.Name]
+					if !ok {
+						panic("RUNTIME ERROR: field '" + t.Name + "' not found")
+					}
+					data.Fields[t.Name] = value
+				default:
+					panic("RUNTIME ERROR: object has no fields")
+				}
 			}
-			computedValue := i.eval(s.Value)
-			//fmt.Printf("%T %+v", computedValue, computedValue)
-			i.env.Set(s.VarName, computedValue)
 		case Return:
 			return FuncResult{
 				Value: s.Value,
@@ -95,6 +113,8 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 			} else if !binaryConditionResult && len(s.Then.Statements) > 0 {
 				i.exressionExecute(s.Else.Statements)
 			}
+		case StructureCall:
+			fmt.Printf(s.Name, s.Value)
 		}
 	}
 	return FuncResult{
@@ -123,6 +143,21 @@ func (i *Interpreter) eval(expr Expression) Value {
 		return i.evalBinary(e)
 	case FuncResult:
 		return i.eval(e.Value)
+	case FieldAccess:
+		obj := i.eval(e.Value)
+		name := e.Name
+		switch v := obj.Data.(type) {
+		case Object:
+			field, ok := v.Fields[name]
+			if !ok {
+				panic("field not found: " + name)
+			}
+
+			return field
+
+		default:
+			panic("cannot access field " + name)
+		}
 	case Variable:
 		val, ok := i.env.Get(e.name)
 		if !ok {

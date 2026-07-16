@@ -68,11 +68,17 @@ type FuncResult struct {
 	Value Expression
 }
 
+type FieldAccess struct {
+	Name  string
+	Value Expression
+}
+
 func (Variable) expression()      {}
 func (NumberLiteral) expression() {}
 func (StringLiteral) expression() {}
 func (Binary) expression()        {}
 func (FuncResult) expression()    {}
+func (FieldAccess) expression()   {}
 
 // //func (Variable) expression(){}
 

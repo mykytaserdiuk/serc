@@ -152,25 +152,23 @@ func (p *Parser) parseBlock() (Block, *Token) {
 				Statements: block,
 			}, p.advance()
 		case NameTokenType:
-			nextToken := p.peekNext()
-			if nextToken.type_ == EqTokenType {
-				p.advance() // name
-				p.advance() // =
+			target := p.parseExpression() // name
+			if p.match(EqTokenType) {
+				p.advance()
 				value := p.parseExpression()
 
 				block = append(block, Assign{
-					VarName: token.value,
-					Value:   value,
+					Target: target,
+					Value:  value,
 				})
-			} else if nextToken.type_ == OparenTokenType {
-				p.advance() // name
-				args := p.parseArgs()
-				block = append(block, Call{
-					name: token.value,
-					args: args,
-				})
+
 			} else {
-				panic("unexpected variable statement: " + token.value)
+				switch e := target.(type) {
+				case Call:
+					block = append(block, e)
+				default:
+					panic("unexpected variable statement: " + token.value)
+				}
 			}
 		case ReturnTokenType:
 			retToken := p.advance()
@@ -191,10 +189,6 @@ func (p *Parser) parseBlock() (Block, *Token) {
 			} else {
 				panic("CANT PARSE IF")
 			}
-		case StructTokenType:
-			p.advance()
-			str := p.parseStruct()
-			block = append(block, str)
 		}
 		if end {
 			break
@@ -397,9 +391,10 @@ func (p *Parser) parsePrimary() Expression {
 	if !ok {
 		panic("parsePrimary: Expected: primary types, got: " + token.type_)
 	}
+	var expr Expression
 	switch token.type_ {
 	case StringTokenType:
-		return StringLiteral{
+		expr = StringLiteral{
 			value: token.value,
 		}
 	case NumTokenType:
@@ -408,21 +403,37 @@ func (p *Parser) parsePrimary() Expression {
 			fmt.Printf("ERROR: parseExpression: cant conver int to str\n")
 			return nil
 		}
-		return NumberLiteral{
+		expr = NumberLiteral{
 			value: int(str),
 		}
 	case NameTokenType:
 		if ok := p.match(OparenTokenType); ok {
 			args := p.parseArgs()
-			return Call{
+			expr = Call{
 				name: token.value,
 				args: args,
 			}
 		} else {
-			return Variable{
+			expr = Variable{
 				name: token.value,
 			}
 		}
+	}
+
+	for p.match(DotTokenType) {
+		p.advance() // .
+		name, ok := p.expect(NameTokenType)
+		if !ok {
+			panic("expected field name after '.'")
+		}
+		expr = FieldAccess{
+			Value: expr,
+			Name:  name.value,
+		}
+	}
+
+	if expr != nil {
+		return expr
 	}
 
 	panic("ERROR: unsupported expression type: " + token.type_)

@@ -149,6 +149,7 @@ func (l *Lexer) NextToken() *Token {
 		'<': LessTokenType,
 		'+': PlusTokenType,
 		'-': MinusTokenType,
+		'.': DotTokenType,
 	}
 	if v, ok := unletterTokens[rune(first)]; ok {
 		switch v {

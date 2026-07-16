@@ -26,8 +26,8 @@ type NewAssign struct {
 func (NewAssign) statement() {}
 
 type Assign struct {
-	VarName string
-	Value   Expression
+	Target Expression
+	Value  Expression
 }
 
 func (Assign) statement() {}
@@ -55,4 +55,9 @@ type Structure struct {
 	Fields []string
 }
 
-func (Structure) statement() {}
+type StructureCall struct {
+	Name  string
+	Value Expression
+}
+
+func (StructureCall) statement() {}
