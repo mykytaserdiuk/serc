@@ -174,15 +174,32 @@ func (i *Interpreter) evalCall(c Call) Value {
 	if ok {
 		return i.createStruct(st, c.args)
 	}
+
 	fn := i.findFunc(c.name)
 	if fn != nil {
-		res := i.execute(fn)
-		return i.eval(res)
-	}
+		args := make([]Value, len(c.args))
 
+		for idx, arg := range c.args {
+			args[idx] = i.eval(arg.Value)
+		}
+
+		oldEnv := i.env
+		i.env = NewEnvironment()
+		for idx, param := range fn.params {
+			if idx < len(args) {
+				i.env.Set(param, args[idx])
+			}
+		}
+
+		res := i.execute(fn)
+		i.env = oldEnv
+		if res.Value == nil {
+			return nullValue()
+		}
+		return i.eval(res.Value)
+	}
 	panic("unknown call: " + c.name)
 }
-
 func (i *Interpreter) createStruct(str *Structure, args []Argument) Value {
 	obj := Object{
 		Type:   str,

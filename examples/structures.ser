@@ -1,14 +1,20 @@
 struct User (
-       firstName
-       lastName
+    firstName
+    lastName
 )
 
 func main():
-     def data = User(
-         firstName: "Oleg"
-         lastName: "Vinnic"
+    def data = User(
+        firstName: "Oleg"
+        lastName: "Vinnic"
     )
-    printf("%+v \n", data.firstName)
     data.firstName = "Daniel"
-    printf("%+v \n", data.firstName)
+    data.lastName = send(data)
+
+    printf("%+v\n", data)
+end
+
+func send(user):
+    printf("%+v\n", user)
+    return "Muller"
 end
