@@ -82,7 +82,7 @@ func (l *Lexer) NextToken() *Token {
 	first := l.source[l.cur]
 	if unicode.IsLetter(rune(first)) {
 		i := l.cur
-		for l.isNotEmpty() && unicode.IsLetter(rune(l.source[l.cur])) {
+		for l.isNotEmpty() && (l.source[l.cur] == '_' || unicode.IsLetter(rune(l.source[l.cur]))) {  // || l.source[l.cur] != ' ') {
 			l.chop()
 		}
 		letterTokens := map[string]TokenType{
@@ -94,6 +94,7 @@ func (l *Lexer) NextToken() *Token {
 			"then":   ThenTokenType,
 			"return": ReturnTokenType,
 			"struct": StructTokenType,
+			"use": 	  UseTokenType,
 		}
 		value := l.source[i:l.cur]
 		if val, ok := letterTokens[value]; ok {

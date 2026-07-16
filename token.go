@@ -21,6 +21,7 @@ const (
 	ElseTokenType TokenType = "else"
 
 	StructTokenType TokenType = "struct"
+	UseTokenType    TokenType = "use"
 
 	MoreTokenType   TokenType = "more"
 	LessTokenType   TokenType = "less"
