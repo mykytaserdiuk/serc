@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/mykytaserdiuk/serc/core"
 )
 
 func main() {
@@ -19,6 +21,6 @@ func main() {
 
 	content := string(file)
 
-	interpreter := NewInterpreter(content)
+	interpreter := core.NewInterpreter(content)
 	interpreter.Main()
 }
