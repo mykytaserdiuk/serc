@@ -19,6 +19,7 @@ const (
 	IfTokenType   TokenType = "if"
 	ThenTokenType TokenType = "then"
 	ElseTokenType TokenType = "else"
+	WhileTokenType TokenType = "while"
 
 	StructTokenType TokenType = "struct"
 	UseTokenType    TokenType = "use"

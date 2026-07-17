@@ -174,6 +174,9 @@ func (p *Parser) parseBlock() (Block, *Token) {
 					panic("unexpected variable statement: " + token.value)
 				}
 			}
+		case WhileTokenType:
+			loop := p.parseLoop()
+			block = append(block, loop)
 		case ReturnTokenType:
 			retToken := p.advance()
 			ret := p.parseReturn(retToken)
@@ -304,8 +307,25 @@ func (p *Parser) parseReturn(returnToken *Token) Return {
 	}
 }
 
+func (p *Parser) parseLoop() Loop {
+	p.advance() // while
+	conditions, ok := p.parseConditions()
+	if ! ok{
+		panic("ERROR: parseLoop: cant parse contidions")
+	}
+	colon, ok := p.expect(ColonTokenType)
+	if !ok {
+		panic("ERROR: parseLoop: expected ':' after conditions, got: " + colon.type_)
+	}
+	block, _ := p.parseBlock()
+	return Loop{
+		Body: block,
+		Conditions: conditions,
+	}
+}
+
 func (p *Parser) parseIf() (If, bool) {
-	conditions, ok := p.parseIfConditions()
+	conditions, ok := p.parseConditions()
 	if !ok {
 		panic("ERROR: parseIf: cant parse conditions")
 	}
@@ -335,7 +355,7 @@ func (p *Parser) parseIf() (If, bool) {
 	}, true
 }
 
-func (p *Parser) parseIfConditions() (Expression, bool) {
+func (p *Parser) parseConditions() (Expression, bool) {
 	if _, ok := p.expect(OparenTokenType); !ok {
 		return nil, false
 	}

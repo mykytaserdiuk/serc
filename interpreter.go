@@ -101,12 +101,11 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 			value := i.eval(s.Value)
 			switch t := s.Target.(type) {
 			case Variable:
-				fmt.Println(s.Value)
 				v, ok := i.env.Get(t.name)
 				if !ok {
 					panic("RUNTIME ERROR: variable '" + t.name + "' not found")
 				}
-				v.Data = value
+				v.Data = value.Data
 				i.env.Set(t.name, v)
 			case FieldAccess:
 				obj := i.eval(t.Value)
@@ -133,6 +132,21 @@ func (i *Interpreter) exressionExecute(statements []Statement) FuncResult {
 				i.exressionExecute(s.Then.Statements)
 			} else if !binaryConditionResult && len(s.Then.Statements) > 0 {
 				i.exressionExecute(s.Else.Statements)
+			}
+		case Loop:
+			conditions := i.eval(s.Conditions)
+			cond, ok := conditions.Data.(bool)
+			if !ok {
+				panic("loop condition must be bool")
+			}
+			for cond {
+				i.exressionExecute(s.Body.Statements)
+
+				conditions = i.eval(s.Conditions)
+				cond, ok = conditions.Data.(bool)
+				if !ok {
+					panic("loop condition must be bool")
+				}
 			}
 		}
 	}

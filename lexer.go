@@ -95,6 +95,7 @@ func (l *Lexer) NextToken() *Token {
 			"return": ReturnTokenType,
 			"struct": StructTokenType,
 			"use": 	  UseTokenType,
+			"while":  WhileTokenType,
 		}
 		value := l.source[i:l.cur]
 		if val, ok := letterTokens[value]; ok {

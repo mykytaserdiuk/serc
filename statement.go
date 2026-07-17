@@ -79,3 +79,10 @@ type Import struct {
 }
 
 func (Import) statement() {}
+
+type Loop struct {
+	Conditions Expression
+	Body 	   Block
+}
+
+func (Loop) statement() {}
