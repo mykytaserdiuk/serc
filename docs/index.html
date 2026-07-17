@@ -1,11 +1,618 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>SER Language Documentation</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f4f4;
+            color: #222;
+            line-height: 1.6;
+        }
+
+        header {
+            background: #222;
+            color: white;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        nav {
+            background: #333;
+            padding: 10px 30px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+        }
+
+        h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        code {
+            background: #eee;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #eee;
+            padding: 15px;
+            overflow-x: auto;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td,
+        th {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        th {
+            background: #eee;
+        }
+
+        .note {
+            background: #eef5ff;
+            border-left: 4px solid #3b82f6;
+            padding: 10px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .github {
+            margin-left: auto;
+        }
+
+        .github img {
+            width: 32px;
+            height: 32px;
+            filter: invert(1);
+        }
+
+        footer img {
+            width: 24px;
+            height: 24px;
+        }
+    </style>
+
 </head>
+
 <body>
-    HELLO
+
+    <header>
+        <div>
+            <h1>SER Programming Language</h1>
+            <p>Simple interpreted programming language written in Go</p>
+        </div>
+
+        <a class="github" href="https://github.com/mykytaserdiuk/serc">
+            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
+        </a>
+    </header>
+
+
+    <nav>
+        <a href="#syntax">Syntax</a>
+        <a href="#functions">Functions</a>
+        <a href="#structures">Structures</a>
+        <a href="#modules">Modules</a>
+        <a href="#todo">TODO</a>
+        <a href="#installation">Installation</a>
+    </nav>
+
+
+    <main>
+
+
+        <h2 id="start">Introduction</h2>
+
+        <p>
+            <a href="https://github.com/mykytaserdiuk/serc">
+                SER
+            </a>
+            is a small interpreted programming language written in Go.
+        </p>
+
+        <p>
+            The goal of SER is to provide a simple syntax and lightweight runtime
+            while still supporting functions, structures and modules.
+        </p>
+
+        <h3>Hello World</h3>
+
+        <pre>
+func main():
+    print("Hello SER!\n")
+end
+</pre>
+
+
+        <div class="note">
+            Every program starts executing from the <code>main()</code> function.
+        </div>
+
+
+
+        <h2 id="syntax">Syntax</h2>
+
+
+        <h3>Comments</h3>
+
+        <p>
+            Comments start with <code>;</code>.
+            Everything after <code>;</code> until the end of line is ignored.
+        </p>
+
+        <pre>
+; this is a comment
+
+func main():
+    print("Hello")
+end
+</pre>
+
+        <h3>Variables</h3>
+
+        <p>
+            Variables are created using <code>def</code>.
+        </p>
+
+        <pre>
+func main():
+    def name = "Oleg"
+    def age = 20
+
+    print(name)
+end
+</pre>
+
+
+        <h3>Assignment</h3>
+
+        <p>
+            Existing variables can be changed without <code>def</code>.
+        </p>
+
+        <pre>
+func main():
+    def x = 0
+    x = x + 1
+end
+</pre>
+
+
+
+        <h2>Data Types</h2>
+
+
+        <table>
+
+            <tr>
+                <th>Type</th>
+                <th>Description</th>
+            </tr>
+
+            <tr>
+                <td>Int</td>
+                <td>Integer numbers</td>
+            </tr>
+
+            <tr>
+                <td>String</td>
+                <td>Text values</td>
+            </tr>
+
+            <tr>
+                <td>Bool</td>
+                <td>Boolean values</td>
+            </tr>
+
+            <tr>
+                <td>Null</td>
+                <td>No value</td>
+            </tr>
+
+            <tr>
+                <td>Object</td>
+                <td>Structures and complex values</td>
+            </tr>
+
+        </table>
+
+        <h2 id="functions">Functions</h2>
+
+        <p>
+            Functions are declared using <code>func</code>.
+        </p>
+
+
+        <pre>
+func hello():
+    print("Hello")
+end
+</pre>
+
+
+        <h3>Function arguments</h3>
+
+        <pre>
+func send(user):
+    printf("%+v\n", user)
+end
+</pre>
+
+
+        <h3>Return values</h3>
+
+        <pre>
+func getName():
+    return "SER"
+end
+</pre>
+
+
+        <p>
+            Functions without a return value return <code>Null</code>.
+        </p>
+
+
+        <h2>Conditions</h2>
+
+
+        <p>
+            Conditions use <code>if</code> and <code>then</code>.
+        </p>
+
+
+        <pre>
+func main():
+    if (5 + 2 <> 6) then
+        print("true")
+    end
+end
+</pre>
+
+
+        <h3>Comparison operators</h3>
+
+        <table>
+
+            <tr>
+                <th>Operator</th>
+                <th>Description</th>
+            </tr>
+
+            <tr>
+                <td>&lt;</td>
+                <td>Less than</td>
+            </tr>
+
+            <tr>
+                <td>&gt;</td>
+                <td>Greater than</td>
+            </tr>
+
+            <tr>
+                <td>&lt;=</td>
+                <td>Less or equal</td>
+            </tr>
+
+            <tr>
+                <td>&gt;=</td>
+                <td>Greater or equal</td>
+            </tr>
+
+            <tr>
+                <td>==</td>
+                <td>Equal</td>
+            </tr>
+
+            <tr>
+                <td>&lt;&gt;</td>
+                <td>Not equal</td>
+            </tr>
+
+        </table>
+
+
+
+
+        <h2>Loops</h2>
+
+
+        <p>
+            SER currently supports <code>while</code> loops.
+        </p>
+
+
+        <pre>
+func main():
+    def x = 0
+    while(x < 10):
+        printf("%+v\n", x)
+        x = x + 1
+    end
+end
+</pre>
+
+        <h2 id="structures">Structures</h2>
+
+
+        <p>
+            Structures allow creating custom objects.
+        </p>
+
+
+        <h3>Creating structure</h3>
+
+
+        <pre>
+struct User (
+    first_name
+    lastName
+)
+</pre>
+
+
+        <h3>Creating object</h3>
+
+        <pre>
+func main():
+    def user = User(
+        first_name: "Oleg"
+        lastName: "Vinnic"
+    )
+end
+</pre>
+
+
+        <h3>Accessing fields</h3>
+
+        <pre>
+
+user.first_name = "Daniel"
+print(user.first_name)
+
+</pre>
+
+        <h2 id="modules">Modules</h2>
+
+        <p>
+            Modules allow splitting programs into separate files.
+        </p>
+
+
+        <p>
+            Modules are stored inside the <code>modules/</code> directory.
+        </p>
+
+        Example structure:
+
+        <pre>
+project/
+    main.ser
+
+    modules/
+        math.ser
+</pre>
+
+
+
+        <h3>Import module</h3>
+
+
+        <pre>
+use math
+</pre>
+
+
+        Example:
+
+
+        <pre>
+; modules/math.ser
+
+func add(a, b):
+    return a + b
+end
+</pre>
+
+
+        Usage:
+
+        <pre>
+use math
+
+func main():
+    printf("%+v\n", math.add(1,5))
+end
+</pre>
+
+
+
+        <h3>Module aliases</h3>
+
+        <p>
+            A module can have an alias.
+            The alias becomes the name used inside the program.
+        </p>
+
+
+        <pre>
+use math calculator
+
+func main():
+    calculator.add(1,5)
+end
+</pre>
+
+        <h2 id="todo">TODO / Roadmap</h2>
+
+        <p>
+            SER is actively developed. Planned features:
+        </p>
+
+        <table>
+            <tr>
+                <th>Feature</th>
+                <th>Status</th>
+            </tr>
+            <tr>
+                <td>More built-in functions</td>
+                <td>Planned</td>
+            </tr>
+            <tr>
+                <td>Better module export system</td>
+                <td>Planned</td>
+            </tr>
+            <tr>
+                <td>Improved error messages</td>
+                <td>Planned</td>
+            </tr>
+            <tr>
+                <td>More data structures</td>
+                <td>Planned</td>
+            </tr>
+            <tr>
+                <td>Standard library</td>
+                <td>Planned</td>
+            </tr>
+            <!-- <tr>
+                <td>Package manager</td>
+                <td>Future</td>
+            </tr> -->
+        </table>
+
+        <h2>Built-in Functions</h2>
+
+
+        <h3>print</h3>
+
+        <p>
+            Prints values without formatting.
+        </p>
+
+
+        <pre>
+print("Hello")
+</pre>
+
+
+
+        <h3>printf</h3>
+
+        <p>
+            Formatted output.
+            Uses formatting similar to Go printf.
+        </p>
+
+
+        <pre>
+printf("%s\n", "Hello")
+printf("%+v\n", object)
+</pre>
+
+
+
+        <h2>Example Program</h2>
+
+        <pre>
+func main():
+    def x = 0
+    while(x < 10):
+        printf("%+v\n", x)
+        x = x + 1
+    end
+end
+        </pre>
+        <h2 id="installation">Installation</h2>
+
+        <p>
+            Build SER interpreter from source:
+        </p>
+
+        <pre>
+git clone https://github.com/mykytaserdiuk/serc
+cd serc
+go build .
+</pre>
+
+
+        <p>
+            Run a SER program:
+        </p>
+
+        <pre>
+./serc ./examples/loops.ser
+</pre>
+
+
+        <p>
+            Example output:
+        </p>
+
+        <pre>
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre>
+
+
+    </main>
+    <footer>
+        <span>SER Language Documentation</span>
+        <a href="https://github.com/mykytaserdiuk/serc">
+            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
+        </a>
+    </footer>
 </body>
+
 </html>
