@@ -1,5 +1,15 @@
 use math
+use http
 
 func main():
      printf("%+v\n", math.add(1, 5))
+
+     def out = http.get("/", "TEST")
+     printf("out: %s \n", out)
+     
+     def err = http.serve(":8080")
+     printf("err: %v \n", err)
+     for (1==1) 
+          print("tick \n")
+     end
 end

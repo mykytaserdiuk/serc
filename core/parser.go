@@ -15,7 +15,7 @@ type Parser struct {
 
 func (p *Parser) next() *ast.Token {
 	token := p.l.NextToken()
-	// fmt.Println(token.value)
+	//fmt.Println(token.Value)
 	return token
 }
 
@@ -79,12 +79,14 @@ func (p *Parser) expect(types ...ast.TokenType) (*ast.Token, bool) {
 
 func (p *Parser) parseProgram() ast.Program {
 	program := ast.Program{
-		Structs:   make(map[string]*ast.Structure),
-		Functions: make(map[string]*ast.Func),
-		Imports:   make(map[string]ast.Import),
+		Structs:    make(map[string]*ast.Structure),
+		Functions:  make(map[string]*ast.Func),
+		Imports:    make(map[string]ast.Import),
+		BuildinFns: make(map[string]ast.BuiltinFunc),
 	}
 	token := p.peek()
 	for token.Type_ != ast.EOFTokenType {
+		//fmt.Println(token.Type_)
 		switch token.Type_ {
 		case ast.FuncTokenType:
 			fn := p.parseFunc()
@@ -95,10 +97,11 @@ func (p *Parser) parseProgram() ast.Program {
 		case ast.UseTokenType:
 			use := p.parseUse()
 			program.Imports[use.Name] = use
+		default:
+			p.advance()
 		}
 		token = p.peek()
 	}
-
 	return program
 }
 

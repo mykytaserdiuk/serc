@@ -10,6 +10,7 @@ import (
 type Interpreter struct {
 	functions  map[string]*ast.Func
 	structures map[string]*ast.Structure
+	builtinFns map[string]ast.BuiltinFunc
 	env        *Environment
 }
 
@@ -23,6 +24,15 @@ func NewInterpreter(content string) *Interpreter {
 	}
 	parsedProgram := mainParser.parseProgram()
 	for _, imp := range parsedProgram.Imports {
+		if funcs, ok := moduleLoader.TryLoadBuildin(imp.Name); ok {
+			for name, fn := range funcs {
+				fnName := imp.Alias + "." + name
+				fmt.Println(fnName, "imported")
+				parsedProgram.BuildinFns[fnName] = fn
+			}
+			continue
+		}
+
 		module := moduleLoader.Load(imp.Name)
 		for _, mStr := range module.Structs {
 			stName := imp.Alias + "." + mStr.Name
@@ -39,6 +49,7 @@ func NewInterpreter(content string) *Interpreter {
 	return &Interpreter{
 		functions:  parsedProgram.Functions,
 		structures: parsedProgram.Structs,
+		builtinFns: parsedProgram.BuildinFns,
 		env:        NewEnvironment(),
 	}
 }
@@ -76,6 +87,24 @@ func (i *Interpreter) exressionExecute(statements []ast.Statement) ast.FuncResul
 				}
 				fmt.Print(vals...)
 			default:
+				buildinFn := i.findBuiltin(s.Name())
+				if buildinFn != nil {
+					argsValues := make([]ast.Value, len(s.Args))
+					for idx, argExpr := range s.Args {
+						argsValues[idx] = i.eval(argExpr.Value)
+					}
+
+					for idx, argName := range s.Args {
+						if idx < len(argsValues) {
+							i.env.Set(argName.Name, argsValues[idx])
+						}
+					}
+
+					result := buildinFn(argsValues)
+					if result.Value != nil {
+						return result
+					}
+				}
 				exFn := i.findFunc(s.Name())
 				if exFn != nil {
 					argsValues := make([]ast.Value, len(s.Args))
@@ -105,7 +134,7 @@ func (i *Interpreter) exressionExecute(statements []ast.Statement) ast.FuncResul
 			case ast.Variable:
 				v, ok := i.env.Get(t.Name)
 				if !ok {
-					panic("RUNTIME ERROR: ast.variable '" + t.Name + "' not found")
+					panic("RUNTIME ERROR: variable '" + t.Name + "' not found")
 				}
 				v.Data = value.Data
 				i.env.Set(t.Name, v)
@@ -163,6 +192,13 @@ func (i *Interpreter) findFunc(name string) *ast.Func {
 	}
 	return nil
 }
+func (i *Interpreter) findBuiltin(name string) ast.BuiltinFunc {
+	if fn, ok := i.builtinFns[name]; ok {
+		return fn
+	}
+
+	return nil
+}
 
 func (i *Interpreter) eval(expr ast.Expression) ast.Value {
 	switch e := expr.(type) {
@@ -196,7 +232,7 @@ func (i *Interpreter) eval(expr ast.Expression) ast.Value {
 	case ast.Variable:
 		val, ok := i.env.Get(e.Name)
 		if !ok {
-			panic(fmt.Sprintf("Runtime Error: ast.variable '%s' is not defined", e.Name))
+			panic(fmt.Sprintf("Runtime Error: variable '%s' is not defined", e.Name))
 		}
 		return val
 	}
@@ -209,7 +245,31 @@ func (i *Interpreter) evalCall(c ast.Call) ast.Value {
 	if ok {
 		return i.createStruct(st, c.Args)
 	}
+	buildinFn := i.findBuiltin(c.Name())
+	if buildinFn != nil {
+		argsValues := make([]ast.Value, len(c.Args))
+		for idx, argExpr := range c.Args {
+			argsValues[idx] = i.eval(argExpr.Value)
+		}
+		oldEnv := i.env
+		i.env = NewEnvironment()
 
+		for idx, argName := range c.Args {
+			if idx < len(argsValues) {
+				i.env.Set(argName.Name, argsValues[idx])
+			}
+		}
+		var result ast.Value
+		res := buildinFn(argsValues)
+
+		if res.Value != nil {
+			result = i.eval(res)
+		} else {
+			result = ast.GetNullValue()
+		}
+		i.env = oldEnv
+		return result
+	}
 	fn := i.findFunc(c.Name())
 	if fn != nil {
 		args := make([]ast.Value, len(c.Args))
