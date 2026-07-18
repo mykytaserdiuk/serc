@@ -3,36 +3,24 @@ package core
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/mykytaserdiuk/serc/ast"
 )
-
-type Program struct {
-	Functions map[string]*Func
-	Structs   map[string]*Structure
-	Imports   map[string]Import
-}
-
-type Node interface{}
-
-type Func struct {
-	name   string
-	params []string
-	body   []Statement
-}
 
 type Parser struct {
 	l       *Lexer
-	current *Token
-	nextTok *Token
+	current *ast.Token
+	nextTok *ast.Token
 }
 
-func (p *Parser) next() *Token {
+func (p *Parser) next() *ast.Token {
 	token := p.l.NextToken()
 	// fmt.Println(token.value)
 	return token
 }
 
 // watch current token
-func (p *Parser) peek() *Token {
+func (p *Parser) peek() *ast.Token {
 	if p.current == nil {
 		if p.nextTok != nil {
 			p.current = p.nextTok
@@ -45,7 +33,7 @@ func (p *Parser) peek() *Token {
 	return p.current
 }
 
-func (p *Parser) peekNext() *Token {
+func (p *Parser) peekNext() *ast.Token {
 	p.peek()
 
 	if p.nextTok == nil {
@@ -56,7 +44,7 @@ func (p *Parser) peekNext() *Token {
 }
 
 // take current token and go
-func (p *Parser) advance() *Token {
+func (p *Parser) advance() *ast.Token {
 	t := p.peek()
 	p.current = nil
 
@@ -64,11 +52,11 @@ func (p *Parser) advance() *Token {
 }
 
 // check token, but dont take him
-func (p *Parser) match(types ...TokenType) bool {
+func (p *Parser) match(types ...ast.TokenType) bool {
 	token := p.peek()
 
 	for _, t := range types {
-		if token.type_ == t {
+		if token.Type_ == t {
 			return true
 		}
 	}
@@ -77,11 +65,11 @@ func (p *Parser) match(types ...TokenType) bool {
 }
 
 // check token, and take him
-func (p *Parser) expect(types ...TokenType) (*Token, bool) {
+func (p *Parser) expect(types ...ast.TokenType) (*ast.Token, bool) {
 	token := p.peek()
 
 	for _, t := range types {
-		if token.type_ == t {
+		if token.Type_ == t {
 			return p.advance(), true
 		}
 	}
@@ -89,22 +77,22 @@ func (p *Parser) expect(types ...TokenType) (*Token, bool) {
 	return token, false
 }
 
-func (p *Parser) parseProgram() Program {
-	program := Program{
-		Structs:   make(map[string]*Structure),
-		Functions: make(map[string]*Func),
-		Imports:   make(map[string]Import),
+func (p *Parser) parseProgram() ast.Program {
+	program := ast.Program{
+		Structs:   make(map[string]*ast.Structure),
+		Functions: make(map[string]*ast.Func),
+		Imports:   make(map[string]ast.Import),
 	}
 	token := p.peek()
-	for token.type_ != EOFTokenType {
-		switch token.type_ {
-		case FuncTokenType:
+	for token.Type_ != ast.EOFTokenType {
+		switch token.Type_ {
+		case ast.FuncTokenType:
 			fn := p.parseFunc()
-			program.Functions[fn.name] = fn
-		case StructTokenType:
+			program.Functions[fn.Name] = fn
+		case ast.StructTokenType:
 			str := p.parseStruct()
 			program.Structs[str.Name] = str
-		case UseTokenType:
+		case ast.UseTokenType:
 			use := p.parseUse()
 			program.Imports[use.Name] = use
 		}
@@ -114,81 +102,81 @@ func (p *Parser) parseProgram() Program {
 	return program
 }
 
-func (p *Parser) parseFunc() *Func {
-	_, ok := p.expect(FuncTokenType)
+func (p *Parser) parseFunc() *ast.Func {
+	_, ok := p.expect(ast.FuncTokenType)
 	if !ok {
 		//fmt.Printf("ERROR: parse func: expected type: %s\n", FuncTokenType)
 		return nil
 	}
-	nameToken, ok := p.expect(NameTokenType)
+	nameToken, ok := p.expect(ast.NameTokenType)
 	if !ok {
-		fmt.Printf("ERROR: parse func: expected type: %s\n", NameTokenType)
+		fmt.Printf("ERROR: parse func: expected type: %s\n", ast.NameTokenType)
 		return nil
 	}
 
 	params, lastToken := p.parseParams()
-	if lastToken.type_ != CparenTokenType {
-		panic("ERROR: Expected close paren after params, but  got: " + lastToken.type_)
+	if lastToken.Type_ != ast.CparenTokenType {
+		panic("ERROR: Expected close paren after params, but  got: " + lastToken.Type_)
 	}
-	if colon, ok := p.expect(ColonTokenType); !ok {
-		fmt.Printf("ERROR: parse func: expected type: %s, got %s\n", ColonTokenType, colon.type_)
+	if colon, ok := p.expect(ast.ColonTokenType); !ok {
+		fmt.Printf("ERROR: parse func: expected type: %s, got %s\n", ast.ColonTokenType, colon.Type_)
 		return nil
 	}
 	block, closeToken := p.parseBlock()
-	if closeToken.type_ != EndTokenType {
+	if closeToken.Type_ != ast.EndTokenType {
 		panic("ERROR: expected end token on end of function")
 	}
-	return &Func{
-		name:   nameToken.value,
-		body:   block.Statements,
-		params: params,
+	return &ast.Func{
+		Name:   nameToken.Value,
+		Body:   block.Statements,
+		Params: params,
 	}
 }
 
-func (p *Parser) parseBlock() (Block, *Token) {
-	block := make([]Statement, 0)
-	var token *Token
+func (p *Parser) parseBlock() (ast.Block, *ast.Token) {
+	block := make([]ast.Statement, 0)
+	var token *ast.Token
 	for {
 		token = p.peek()
 		end := false
-		switch token.type_ {
-		case EndTokenType, EOFTokenType, ElseTokenType:
-			return Block{
+		switch token.Type_ {
+		case ast.EndTokenType, ast.EOFTokenType, ast.ElseTokenType:
+			return ast.Block{
 				Statements: block,
 			}, p.advance()
-		case NameTokenType:
+		case ast.NameTokenType:
 			target := p.parseExpression() // name
-			if p.match(EqTokenType) {
+			if p.match(ast.EqTokenType) {
 				p.advance()
 				value := p.parseExpression()
 
-				block = append(block, Assign{
+				block = append(block, ast.Assign{
 					Target: target,
 					Value:  value,
 				})
 			} else {
 				switch e := target.(type) {
-				case Call:
+				case ast.Call:
 					block = append(block, e)
 				default:
-					panic("unexpected variable statement: " + token.value)
+					panic("unexpected variable statement: " + token.Value)
 				}
 			}
-		case WhileTokenType:
+		case ast.WhileTokenType:
 			loop := p.parseLoop()
 			block = append(block, loop)
-		case ReturnTokenType:
+		case ast.ReturnTokenType:
 			retToken := p.advance()
 			ret := p.parseReturn(retToken)
 			block = append(block, ret)
-		case DefTokenType:
+		case ast.DefTokenType:
 			p.advance()
 			def, ok := p.parseDef()
 			if !ok {
 				panic("ERROR: parse block: def is empty")
 			}
 			block = append(block, def)
-		case IfTokenType:
+		case ast.IfTokenType:
 			p.advance()
 			ifStmt, ok := p.parseIf()
 			if ok {
@@ -201,35 +189,35 @@ func (p *Parser) parseBlock() (Block, *Token) {
 			break
 		}
 	}
-	return Block{
+	return ast.Block{
 		Statements: block,
 	}, token
 }
 
-func (p *Parser) parseDef() (NewAssign, bool) {
-	name, ok := p.expect(NameTokenType)
+func (p *Parser) parseDef() (ast.NewAssign, bool) {
+	name, ok := p.expect(ast.NameTokenType)
 	if !ok {
-		fmt.Printf("ERROR: parseDef: expected: %s, got: %s\n", NameTokenType, name.type_)
-		return NewAssign{}, false
+		fmt.Printf("ERROR: parseDef: expected: %s, got: %s\n", ast.NameTokenType, name.Type_)
+		return ast.NewAssign{}, false
 	}
-	eq, eqok := p.expect(EqTokenType)
+	eq, eqok := p.expect(ast.EqTokenType)
 	if !eqok {
-		fmt.Printf("ERROR: parseDef: expected: %s, got: %s\n", EqTokenType, eq.type_)
-		return NewAssign{}, false
+		fmt.Printf("ERROR: parseDef: expected: %s, got: %s\n", ast.EqTokenType, eq.Type_)
+		return ast.NewAssign{}, false
 	}
 
 	exp := p.parseExpression()
 
-	return NewAssign{
-		VarName: name.value,
+	return ast.NewAssign{
+		VarName: name.Value,
 		Value:   exp,
 	}, true
 }
 
-func (p *Parser) parseStruct() *Structure {
+func (p *Parser) parseStruct() *ast.Structure {
 	p.advance() // chop 'struct'
 
-	name, ok := p.expect(NameTokenType)
+	name, ok := p.expect(ast.NameTokenType)
 	if !ok {
 		panic("expected name literal after 'struct'")
 	}
@@ -237,26 +225,26 @@ func (p *Parser) parseStruct() *Structure {
 	if len(fields) == 0 {
 		panic("struct must have a fields")
 	}
-	return &Structure{
-		Name:   name.value,
+	return &ast.Structure{
+		Name:   name.Value,
 		Fields: fields,
 	}
 }
 
 func (p *Parser) parseStructFields() []string {
 	fields := []string{}
-	_, ok := p.expect(OparenTokenType)
+	_, ok := p.expect(ast.OparenTokenType)
 	if !ok {
 
 	}
 	end := false
-	for p.match(CparenTokenType, NameTokenType) {
+	for p.match(ast.CparenTokenType, ast.NameTokenType) {
 		token := p.advance()
-		switch token.type_ {
-		case CparenTokenType:
+		switch token.Type_ {
+		case ast.CparenTokenType:
 			end = true
-		case NameTokenType:
-			fields = append(fields, token.value)
+		case ast.NameTokenType:
+			fields = append(fields, token.Value)
 		}
 		if end {
 			break
@@ -265,98 +253,98 @@ func (p *Parser) parseStructFields() []string {
 	return fields
 }
 
-func (p *Parser) parseUse() Import {
+func (p *Parser) parseUse() ast.Import {
 	p.advance() // use
 	name := p.parsePrimary()
 	var useName string
 	var alias string
 	switch t := name.(type) {
-	case Variable:
-		useName = t.name
+	case ast.Variable:
+		useName = t.Name
 	default:
 		panic(fmt.Sprintf("expected name of use got: %T", t))
 	}
 
-	ok := p.match(StringTokenType)
+	ok := p.match(ast.StringTokenType)
 	if !ok {
 		alias = useName
 	} else {
 		aliasExp := p.parsePrimary()
-		if aliasVal, ok := aliasExp.(StringLiteral); !ok {
+		if aliasVal, ok := aliasExp.(ast.StringLiteral); !ok {
 			panic(fmt.Sprintf("as alias cab be only string literal, got: %T", aliasExp))
 		} else {
-			alias = aliasVal.value
+			alias = aliasVal.Value
 		}
 	}
 
-	return Import{
+	return ast.Import{
 		Alias: alias,
 		Name:  useName,
 	}
 }
 
-func (p *Parser) parseReturn(returnToken *Token) Return {
-	if p.peek().line > returnToken.line {
-		return Return{
+func (p *Parser) parseReturn(returnToken *ast.Token) ast.Return {
+	if p.peek().Line > returnToken.Line {
+		return ast.Return{
 			Value: nil,
 		}
 	} else {
-		return Return{
+		return ast.Return{
 			Value: p.parseExpression(),
 		}
 	}
 }
 
-func (p *Parser) parseLoop() Loop {
+func (p *Parser) parseLoop() ast.Loop {
 	p.advance() // while
 	conditions, ok := p.parseConditions()
-	if ! ok{
+	if !ok {
 		panic("ERROR: parseLoop: cant parse contidions")
 	}
-	colon, ok := p.expect(ColonTokenType)
+	colon, ok := p.expect(ast.ColonTokenType)
 	if !ok {
-		panic("ERROR: parseLoop: expected ':' after conditions, got: " + colon.type_)
+		panic("ERROR: parseLoop: expected ':' after conditions, got: " + colon.Type_)
 	}
 	block, _ := p.parseBlock()
-	return Loop{
-		Body: block,
+	return ast.Loop{
+		Body:       block,
 		Conditions: conditions,
 	}
 }
 
-func (p *Parser) parseIf() (If, bool) {
+func (p *Parser) parseIf() (ast.If, bool) {
 	conditions, ok := p.parseConditions()
 	if !ok {
 		panic("ERROR: parseIf: cant parse conditions")
 	}
-	then, ok := p.expect(ThenTokenType)
+	then, ok := p.expect(ast.ThenTokenType)
 	if !ok {
-		panic("ERROR: parseIf: 'then' not found, got: " + then.type_)
+		panic("ERROR: parseIf: 'then' not found, got: " + then.Type_)
 	}
 	thenBlock, lastChoped := p.parseBlock()
 	if lastChoped == nil {
-		fmt.Printf("ERROR: parseIf: expected some choped: %+v, but is nil\n", []TokenType{ElseTokenType, EndTokenType})
-		return If{}, false
+		fmt.Printf("ERROR: parseIf: expected some choped: %+v, but is nil\n", []ast.TokenType{ast.ElseTokenType, ast.EndTokenType})
+		return ast.If{}, false
 	}
-	elseBlock := Block{}
-	if lastChoped.type_ == ElseTokenType {
+	elseBlock := ast.Block{}
+	if lastChoped.Type_ == ast.ElseTokenType {
 		elseBlock, lastChoped = p.parseBlock()
-		if lastChoped.type_ != EndTokenType {
+		if lastChoped.Type_ != ast.EndTokenType {
 			panic("expected end after else")
 		}
-	} else if lastChoped.type_ != EndTokenType {
+	} else if lastChoped.Type_ != ast.EndTokenType {
 		panic("expected end")
 	}
 
-	return If{
+	return ast.If{
 		Then:       thenBlock,
 		Else:       elseBlock,
 		Conditions: conditions,
 	}, true
 }
 
-func (p *Parser) parseConditions() (Expression, bool) {
-	if _, ok := p.expect(OparenTokenType); !ok {
+func (p *Parser) parseConditions() (ast.Expression, bool) {
+	if _, ok := p.expect(ast.OparenTokenType); !ok {
 		return nil, false
 	}
 
@@ -365,15 +353,15 @@ func (p *Parser) parseConditions() (Expression, bool) {
 		return nil, false
 	}
 
-	if _, ok := p.expect(CparenTokenType); !ok {
+	if _, ok := p.expect(ast.CparenTokenType); !ok {
 		return nil, false
 	}
 
 	return expr, true
 }
 
-func (p *Parser) parseParams() ([]string, *Token) {
-	token, ok := p.expect(OparenTokenType)
+func (p *Parser) parseParams() ([]string, *ast.Token) {
+	token, ok := p.expect(ast.OparenTokenType)
 	if !ok {
 		return []string{}, token
 	}
@@ -382,50 +370,50 @@ func (p *Parser) parseParams() ([]string, *Token) {
 
 	for {
 		token, ok := p.expect(
-			CparenTokenType,
-			NameTokenType,
+			ast.CparenTokenType,
+			ast.NameTokenType,
 		)
 
 		if !ok {
 			return params, token
 		}
 
-		switch token.type_ {
-		case CparenTokenType:
+		switch token.Type_ {
+		case ast.CparenTokenType:
 			return params, token
 
-		case NameTokenType:
-			params = append(params, token.value)
+		case ast.NameTokenType:
+			params = append(params, token.Value)
 		}
 	}
 }
 
-func (p *Parser) parseArgs() []Argument {
-	var args []Argument
-	if !p.match(OparenTokenType) {
+func (p *Parser) parseArgs() []ast.Argument {
+	var args []ast.Argument
+	if !p.match(ast.OparenTokenType) {
 		panic("expected '(' before args")
 	}
 	p.advance() // (
 
-	for p.peek().type_ != CparenTokenType {
+	for p.peek().Type_ != ast.CparenTokenType {
 		current := p.peek()
 		next := p.peekNext()
-		if current.type_ == NameTokenType && next.type_ == ColonTokenType {
+		if current.Type_ == ast.NameTokenType && next.Type_ == ast.ColonTokenType {
 			name := p.advance() // name
 			p.advance()         // :
 			argExpr := p.parseExpression()
-			args = append(args, Argument{
-				Name:  name.value,
+			args = append(args, ast.Argument{
+				Name:  name.Value,
 				Value: argExpr,
 			})
 		} else {
 			exp := p.parseExpression()
-			args = append(args, Argument{
+			args = append(args, ast.Argument{
 				Value: exp,
 			})
 		}
 
-		if ok := p.match(CommaTokenType); ok {
+		if ok := p.match(ast.CommaTokenType); ok {
 			p.advance()
 			continue
 		}
@@ -436,54 +424,54 @@ func (p *Parser) parseArgs() []Argument {
 	return args
 }
 
-func (p *Parser) parsePrimary() Expression {
+func (p *Parser) parsePrimary() ast.Expression {
 	token, ok := p.expect(
-		NumTokenType,
-		StringTokenType,
-		NameTokenType,
+		ast.NumTokenType,
+		ast.StringTokenType,
+		ast.NameTokenType,
 	)
 	if !ok {
-		panic("parsePrimary: Expected: primary types, got: " + token.type_)
+		panic("parsePrimary: Expected: primary types, got: " + token.Type_)
 	}
-	var expr Expression
-	switch token.type_ {
-	case StringTokenType:
-		expr = StringLiteral{
-			value: token.value,
+	var expr ast.Expression
+	switch token.Type_ {
+	case ast.StringTokenType:
+		expr = ast.StringLiteral{
+			Value: token.Value,
 		}
-	case NumTokenType:
-		str, err := strconv.ParseInt(token.value, 10, 64)
+	case ast.NumTokenType:
+		str, err := strconv.ParseInt(token.Value, 10, 64)
 		if err != nil {
 			panic("ERROR: parseExpression: cant convert int")
 		}
 
-		expr = NumberLiteral{
-			value: int(str),
+		expr = ast.NumberLiteral{
+			Value: int(str),
 		}
-	case NameTokenType:
-		expr = Variable{
-			name: token.value,
+	case ast.NameTokenType:
+		expr = ast.Variable{
+			Name: token.Value,
 		}
 
-		for p.match(DotTokenType) {
+		for p.match(ast.DotTokenType) {
 			p.advance() // .
 
-			name, ok := p.expect(NameTokenType)
+			name, ok := p.expect(ast.NameTokenType)
 			if !ok {
 				panic("expected name after '.'")
 			}
 
-			expr = FieldAccess{
+			expr = ast.FieldAccess{
 				Value: expr,
-				Name:  name.value,
+				Name:  name.Value,
 			}
 		}
 
-		if p.peek().type_ == OparenTokenType {
+		if p.peek().Type_ == ast.OparenTokenType {
 			args := p.parseArgs()
-			expr = Call{
+			expr = ast.Call{
 				Target: expr,
-				args:   args,
+				Args:   args,
 			}
 		}
 	}
@@ -491,17 +479,17 @@ func (p *Parser) parsePrimary() Expression {
 	return expr
 }
 
-func (p *Parser) parseAddition() Expression {
+func (p *Parser) parseAddition() ast.Expression {
 	left := p.parsePrimary()
 	for p.match(
-		PlusTokenType,
-		MinusTokenType,
+		ast.PlusTokenType,
+		ast.MinusTokenType,
 	) {
 		op := p.advance()
 
 		right := p.parsePrimary()
 
-		left = Binary{
+		left = ast.Binary{
 			Left:  left,
 			Op:    op,
 			Right: right,
@@ -510,21 +498,21 @@ func (p *Parser) parseAddition() Expression {
 	return left
 }
 
-func (p *Parser) parseComparation() Expression {
+func (p *Parser) parseComparation() ast.Expression {
 	left := p.parseAddition()
 
 	for p.match(
-		MoreTokenType,
-		LessTokenType,
-		EqEqTokenType,
-		EqMoreTokenType,
-		EqLessTokenType,
-		NotEqTokenType,
+		ast.MoreTokenType,
+		ast.LessTokenType,
+		ast.EqEqTokenType,
+		ast.EqMoreTokenType,
+		ast.EqLessTokenType,
+		ast.NotEqTokenType,
 	) {
 		op := p.advance()
 		right := p.parseAddition()
 
-		left = Binary{
+		left = ast.Binary{
 			Left:  left,
 			Op:    op,
 			Right: right,
@@ -533,7 +521,7 @@ func (p *Parser) parseComparation() Expression {
 
 	return left
 }
-func (p *Parser) parseExpression() Expression {
+func (p *Parser) parseExpression() ast.Expression {
 	exp := p.parseComparation()
 	return exp
 }

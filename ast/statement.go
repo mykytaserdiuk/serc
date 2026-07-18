@@ -1,4 +1,4 @@
-package core
+package ast
 
 type Statement interface {
 	Node
@@ -12,7 +12,7 @@ type Argument struct {
 
 type Call struct {
 	Target Expression
-	args   []Argument
+	Args   []Argument
 }
 
 func (Call) statement()  {}
@@ -24,7 +24,7 @@ func (c Call) Name() string {
 func expressionName(expr Expression) string {
 	switch t := expr.(type) {
 	case Variable:
-		return t.name
+		return t.Name
 	case FieldAccess:
 		left := expressionName(t.Value)
 		if left == "" {
@@ -82,7 +82,7 @@ func (Import) statement() {}
 
 type Loop struct {
 	Conditions Expression
-	Body 	   Block
+	Body       Block
 }
 
 func (Loop) statement() {}

@@ -1,4 +1,4 @@
-package core
+package ast
 
 type TokenType string
 
@@ -16,9 +16,9 @@ const (
 	CommaTokenType  TokenType = "comma"
 	DotTokenType    TokenType = "dot"
 
-	IfTokenType   TokenType = "if"
-	ThenTokenType TokenType = "then"
-	ElseTokenType TokenType = "else"
+	IfTokenType    TokenType = "if"
+	ThenTokenType  TokenType = "then"
+	ElseTokenType  TokenType = "else"
 	WhileTokenType TokenType = "while"
 
 	StructTokenType TokenType = "struct"
@@ -39,7 +39,7 @@ const (
 )
 
 type Token struct {
-	type_ TokenType
-	value string
-	line  int
+	Type_ TokenType
+	Value string
+	Line  int
 }

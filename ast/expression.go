@@ -1,4 +1,4 @@
-package core
+package ast
 
 import "fmt"
 
@@ -8,14 +8,14 @@ type Expression interface {
 }
 
 type StringLiteral struct {
-	value string
+	Value string
 }
 type NumberLiteral struct {
-	value int
+	Value int
 }
 
 type Variable struct {
-	name string
+	Name string
 }
 
 type Object struct {
@@ -83,28 +83,28 @@ func (FieldAccess) expression()   {}
 // //func (Variable) expression(){}
 
 // get values
-func intValue(v int) Value {
+func GetIntValue(v int) Value {
 	return Value{
 		Type: IntValue,
 		Data: v,
 	}
 }
 
-func stringValue(v string) Value {
+func GetStringValue(v string) Value {
 	return Value{
 		Type: StringValue,
 		Data: v,
 	}
 }
 
-func boolValue(v bool) Value {
+func GetBoolValue(v bool) Value {
 	return Value{
 		Type: BoolValue,
 		Data: v,
 	}
 }
 
-func nullValue() Value {
+func GetNullValue() Value {
 	return Value{
 		Type: NullValue,
 		Data: "null",

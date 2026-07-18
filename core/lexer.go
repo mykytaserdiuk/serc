@@ -2,6 +2,8 @@ package core
 
 import (
 	"unicode"
+
+	"github.com/mykytaserdiuk/serc/ast"
 )
 
 type Lexer struct {
@@ -58,15 +60,15 @@ func (l *Lexer) dropLine() {
 	}
 }
 
-func (l *Lexer) NextToken() *Token {
+func (l *Lexer) NextToken() *ast.Token {
 	l.moveRight()
 
 	if l.isEmpty() {
 		// end of file
-		return &Token{
-			value: "",
-			type_: EOFTokenType,
-			line:  l.row,
+		return &ast.Token{
+			Value: "",
+			Type_: ast.EOFTokenType,
+			Line:  l.row,
 		}
 	}
 	if l.source[l.cur] == ';' {
@@ -82,33 +84,33 @@ func (l *Lexer) NextToken() *Token {
 	first := l.source[l.cur]
 	if unicode.IsLetter(rune(first)) {
 		i := l.cur
-		for l.isNotEmpty() && (l.source[l.cur] == '_' || unicode.IsLetter(rune(l.source[l.cur]))) {  // || l.source[l.cur] != ' ') {
+		for l.isNotEmpty() && (l.source[l.cur] == '_' || unicode.IsLetter(rune(l.source[l.cur]))) { // || l.source[l.cur] != ' ') {
 			l.chop()
 		}
-		letterTokens := map[string]TokenType{
-			"end":    EndTokenType,
-			"def":    DefTokenType,
-			"func":   FuncTokenType,
-			"if":     IfTokenType,
-			"else":   ElseTokenType,
-			"then":   ThenTokenType,
-			"return": ReturnTokenType,
-			"struct": StructTokenType,
-			"use": 	  UseTokenType,
-			"while":  WhileTokenType,
+		letterTokens := map[string]ast.TokenType{
+			"end":    ast.EndTokenType,
+			"def":    ast.DefTokenType,
+			"func":   ast.FuncTokenType,
+			"if":     ast.IfTokenType,
+			"else":   ast.ElseTokenType,
+			"then":   ast.ThenTokenType,
+			"return": ast.ReturnTokenType,
+			"struct": ast.StructTokenType,
+			"use":    ast.UseTokenType,
+			"while":  ast.WhileTokenType,
 		}
 		value := l.source[i:l.cur]
 		if val, ok := letterTokens[value]; ok {
-			return &Token{
-				type_: val,
-				value: value,
-				line:  l.row,
+			return &ast.Token{
+				Type_: val,
+				Value: value,
+				Line:  l.row,
 			}
 		} else {
-			return &Token{
-				type_: NameTokenType,
-				value: value,
-				line:  l.row,
+			return &ast.Token{
+				Type_: ast.NameTokenType,
+				Value: value,
+				Line:  l.row,
 			}
 		}
 	}
@@ -118,9 +120,9 @@ func (l *Lexer) NextToken() *Token {
 		for l.isNotEmpty() && unicode.IsNumber(rune(l.source[l.cur])) {
 			l.chop()
 		}
-		return &Token{
-			value: string(l.source[i:l.cur]),
-			type_: NumTokenType,
+		return &ast.Token{
+			Value: string(l.source[i:l.cur]),
+			Type_: ast.NumTokenType,
 		}
 	}
 
@@ -129,80 +131,80 @@ func (l *Lexer) NextToken() *Token {
 		l.chop()
 		if next == '=' {
 			l.chop()
-			return &Token{
-				type_: EqEqTokenType,
-				value: "==",
-				line:  l.row,
+			return &ast.Token{
+				Type_: ast.EqEqTokenType,
+				Value: "==",
+				Line:  l.row,
 			}
 		}
-		return &Token{
-			type_: EqTokenType,
-			value: "=",
-			line:  l.row,
+		return &ast.Token{
+			Type_: ast.EqTokenType,
+			Value: "=",
+			Line:  l.row,
 		}
 	}
 
-	unletterTokens := map[rune]TokenType{
-		'(': OparenTokenType,
-		')': CparenTokenType,
-		':': ColonTokenType,
-		',': CommaTokenType,
-		'>': MoreTokenType,
-		'<': LessTokenType,
-		'+': PlusTokenType,
-		'-': MinusTokenType,
-		'.': DotTokenType,
+	unletterTokens := map[rune]ast.TokenType{
+		'(': ast.OparenTokenType,
+		')': ast.CparenTokenType,
+		':': ast.ColonTokenType,
+		',': ast.CommaTokenType,
+		'>': ast.MoreTokenType,
+		'<': ast.LessTokenType,
+		'+': ast.PlusTokenType,
+		'-': ast.MinusTokenType,
+		'.': ast.DotTokenType,
 	}
 	if v, ok := unletterTokens[rune(first)]; ok {
 		switch v {
-		case MoreTokenType:
+		case ast.MoreTokenType:
 			if l.source[l.cur+1] == '=' {
 				l.chop()
 				l.chop()
-				return &Token{
-					value: ">=",
-					type_: EqMoreTokenType,
-					line:  l.row,
+				return &ast.Token{
+					Value: ">=",
+					Type_: ast.EqMoreTokenType,
+					Line:  l.row,
 				}
 			} else {
 				l.chop()
-				return &Token{
-					value: ">",
-					type_: MoreTokenType,
-					line:  l.row,
+				return &ast.Token{
+					Value: ">",
+					Type_: ast.MoreTokenType,
+					Line:  l.row,
 				}
 			}
-		case LessTokenType:
+		case ast.LessTokenType:
 			if l.source[l.cur+1] == '=' {
 				l.chop()
 				l.chop()
-				return &Token{
-					value: "<=",
-					type_: EqLessTokenType,
-					line:  l.row,
+				return &ast.Token{
+					Value: "<=",
+					Type_: ast.EqLessTokenType,
+					Line:  l.row,
 				}
 			} else if l.source[l.cur+1] == '>' {
 				l.chop()
 				l.chop()
-				return &Token{
-					value: "<>",
-					type_: NotEqTokenType,
-					line:  l.row,
+				return &ast.Token{
+					Value: "<>",
+					Type_: ast.NotEqTokenType,
+					Line:  l.row,
 				}
 			} else {
 				l.chop()
-				return &Token{
-					value: "<",
-					type_: LessTokenType,
-					line:  l.row,
+				return &ast.Token{
+					Value: "<",
+					Type_: ast.LessTokenType,
+					Line:  l.row,
 				}
 			}
 		default:
 			l.chop()
-			return &Token{
-				value: string(first),
-				type_: v,
-				line:  l.row,
+			return &ast.Token{
+				Value: string(first),
+				Type_: v,
+				Line:  l.row,
 			}
 		}
 	}
@@ -233,18 +235,18 @@ func (l *Lexer) NextToken() *Token {
 		if l.isNotEmpty() {
 			//value = append(value, l.source[l.cur])
 			l.chop()
-			return &Token{
-				type_: StringTokenType,
-				value: string(value),
-				line:  l.row,
+			return &ast.Token{
+				Type_: ast.StringTokenType,
+				Value: string(value),
+				Line:  l.row,
 			}
 		}
 	}
 
-	return &Token{
-		value: "",
-		type_: EOFTokenType,
-		line:  l.row,
+	return &ast.Token{
+		Value: "",
+		Type_: ast.EOFTokenType,
+		Line:  l.row,
 	}
 	//	panic("TODO next token")
 }
