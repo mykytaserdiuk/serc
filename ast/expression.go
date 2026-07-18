@@ -49,6 +49,10 @@ type Binary struct {
 	Right Expression
 }
 
+type FunctionValue struct {
+	Func *Func
+}
+
 type Value struct {
 	Type ValueType
 	Data any
@@ -62,6 +66,7 @@ const (
 	BoolValue
 	NullValue
 	ObjectValue
+	FuncValue
 )
 
 type FuncResult struct {

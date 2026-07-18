@@ -22,6 +22,9 @@ func NewInterpreter(content string) *Interpreter {
 	moduleLoader := ModuleLoader{
 		loaded: make(map[string]*ast.Program),
 	}
+	i := &Interpreter{}
+	moduleLoader.Init(i)
+
 	parsedProgram := mainParser.parseProgram()
 	for _, imp := range parsedProgram.Imports {
 		if funcs, ok := moduleLoader.TryLoadBuildin(imp.Name); ok {
@@ -46,12 +49,21 @@ func NewInterpreter(content string) *Interpreter {
 		}
 	}
 
-	return &Interpreter{
-		functions:  parsedProgram.Functions,
-		structures: parsedProgram.Structs,
-		builtinFns: parsedProgram.BuildinFns,
-		env:        NewEnvironment(),
+	i.functions = parsedProgram.Functions
+	i.structures = parsedProgram.Structs
+	i.builtinFns = parsedProgram.BuildinFns
+	i.env = NewEnvironment()
+
+	for name, fn := range parsedProgram.Functions {
+		i.env.Set(name, ast.Value{
+			Type: ast.FuncValue,
+			Data: ast.FunctionValue{
+				Func: fn,
+			},
+		})
 	}
+
+	return i
 }
 
 func (i *Interpreter) execute(fn *ast.Func) ast.FuncResult {
@@ -186,6 +198,27 @@ func (i *Interpreter) exressionExecute(statements []ast.Statement) ast.FuncResul
 	}
 }
 
+func (i *Interpreter) executeWithArgs(fn *ast.Func, args []ast.Value) ast.Value {
+	oldEnv := i.env
+	env := NewEnvironmentWithParent(oldEnv)
+	for idx, param := range fn.Params {
+		if idx >= len(args) {
+			break
+		}
+		env.Set(param, args[idx])
+	}
+
+	i.env = env
+	defer func() {
+		i.env = oldEnv
+	}()
+
+	var result ast.Value
+	result = i.eval(i.exressionExecute(fn.Body))
+
+	return result
+}
+
 func (i *Interpreter) findFunc(name string) *ast.Func {
 	if fn, ok := i.functions[name]; ok {
 		return fn
@@ -278,26 +311,20 @@ func (i *Interpreter) evalCall(c ast.Call) ast.Value {
 			args[idx] = i.eval(arg.Value)
 		}
 
-		oldEnv := i.env
-		i.env = NewEnvironment()
-		for idx, param := range fn.Params {
-			if idx < len(args) {
-				i.env.Set(param, args[idx])
-			}
-		}
-
-		res := i.execute(fn)
-
-		var result ast.Value
-		if res.Value == nil {
-			result = ast.GetNullValue()
-		} else {
-			result = i.eval(res.Value)
-		}
-		i.env = oldEnv
+		result := i.executeWithArgs(fn, args)
 		return result
 	}
 	panic("unknown call: " + c.Name())
+}
+
+func (i *Interpreter) callValue(fn ast.Value, args []ast.Value) ast.Value {
+	if fn.Type != ast.FuncValue {
+		panic("not callable")
+	}
+
+	f := fn.Data.(ast.FunctionValue).Func
+
+	return i.executeWithArgs(f, args)
 }
 
 func (i *Interpreter) createStruct(str *ast.Structure, args []ast.Argument) ast.Value {
@@ -384,6 +411,10 @@ func (i *Interpreter) evaBinary(bin ast.Binary) ast.Value {
 		}
 	}
 	panic("Row " + strconv.Itoa(bin.Op.Line) + ": RUNTIME ERROR: Unexpected type to calculate ast.binary")
+}
+
+func (i *Interpreter) Call(fn ast.Value, args []ast.Value) ast.Value {
+	return i.callValue(fn, args)
 }
 
 // macros

@@ -6,12 +6,20 @@ import (
 
 	"github.com/mykytaserdiuk/serc/ast"
 	"github.com/mykytaserdiuk/serc/buildin"
+	"github.com/mykytaserdiuk/serc/runtime"
 )
 
 type ModuleLoader struct {
 	loaded map[string]*ast.Program
 }
 
+var (
+	buildInModules = make(map[string]map[string]ast.BuiltinFunc)
+)
+
+func (l *ModuleLoader) Init(rt runtime.Runtime) {
+	buildInModules["http"] = buildin.LoadHttp(rt)
+}
 func (l *ModuleLoader) Load(name string) *ast.Program {
 	if p, ok := l.loaded[name]; ok {
 		return p
@@ -27,12 +35,6 @@ func (l *ModuleLoader) Load(name string) *ast.Program {
 	l.loaded[name] = &program
 	return &program
 }
-
-var (
-	buildInModules = map[string]map[string]ast.BuiltinFunc{
-		"http": buildin.LoadHttp(),
-	}
-)
 
 func (l *ModuleLoader) TryLoadBuildin(name string) (map[string]ast.BuiltinFunc, bool) {
 	if funcs, ok := buildInModules[name]; ok {
