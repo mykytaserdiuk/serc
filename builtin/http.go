@@ -1,6 +1,7 @@
 package builtin
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/mykytaserdiuk/serc/ast"
@@ -16,9 +17,37 @@ func LoadHttp(rt runtime.Runtime) map[string]ast.BuiltinFunc {
 	funcs["serve"] = HttpServe
 	funcs["get"] = HttpGet
 	funcs["post"] = HttpPost
+	funcs["handle"] = HttpHandle
 	RT = rt
 	return funcs
 }
+
+func HttpHandle(args []ast.Value) ast.FuncResult {
+	endpoint := args[0]
+	if endpoint.Type != ast.StringValue {
+		panic("RUNTIME ERROR: expected string value as first argument")
+	}
+	callback := args[1]
+	if callback.Type != ast.FuncValue {
+		panic("RUNTIME ERROR: expected func value as second argument")
+	}
+
+	http.HandleFunc(endpoint.Data.(string), func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]string
+		json.NewDecoder(r.Body).Decode(&body)
+		ret := RT.Call(callback, []ast.Value{
+			ast.GetStringValue(r.Method),
+			ast.GetNativeObjectValue("body", body),
+			ast.GetNativeObjectValue("request", r),
+		})
+		w.Write([]byte(ret.Data.(string)))
+	})
+
+	return ast.FuncResult{
+		Value: ast.NumberLiteral{Value: 0},
+	}
+}
+
 func HttpPost(args []ast.Value) ast.FuncResult {
 	endpoint := args[0]
 	if endpoint.Type != ast.StringValue {

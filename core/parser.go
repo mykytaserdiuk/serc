@@ -375,6 +375,7 @@ func (p *Parser) parseParams() ([]string, *ast.Token) {
 		token, ok := p.expect(
 			ast.CparenTokenType,
 			ast.NameTokenType,
+			ast.CommaTokenType,
 		)
 
 		if !ok {
@@ -384,7 +385,8 @@ func (p *Parser) parseParams() ([]string, *ast.Token) {
 		switch token.Type_ {
 		case ast.CparenTokenType:
 			return params, token
-
+		case ast.CommaTokenType:
+			continue
 		case ast.NameTokenType:
 			params = append(params, token.Value)
 		}

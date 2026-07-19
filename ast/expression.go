@@ -128,35 +128,42 @@ func GetNullValue() Value {
 	}
 }
 
+// BE CAREFUL, its reflect
 func GetNativeObjectValue(name string, data any) Value {
 	fields := make(map[string]Value)
+
 	v := reflect.ValueOf(data)
 	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 
-	t := v.Type()
-	for idx := 0; idx < v.NumField(); idx++ {
-		fieldName := t.Field(idx).Name
-		fieldValue := v.Field(idx)
+	switch v.Kind() {
 
-		switch fieldValue.Kind() {
-		case reflect.String:
-			fields[fieldName] = GetStringValue(
-				fieldValue.String(),
-			)
-		case reflect.Int:
-			fields[fieldName] = GetIntValue(
-				int(fieldValue.Int()),
-			)
-		case reflect.Bool:
-			fields[fieldName] = GetBoolValue(
-				fieldValue.Bool(),
-			)
-		default:
-			fields[fieldName] = GetNullValue()
+	case reflect.Struct:
+		t := v.Type()
+
+		for i := 0; i < v.NumField(); i++ {
+			field := v.Field(i)
+			fieldName := t.Field(i).Name
+
+			fields[fieldName] = reflectToValue(field)
+		}
+
+	case reflect.Map:
+		iter := v.MapRange()
+
+		for iter.Next() {
+			key := iter.Key()
+			value := iter.Value()
+
+			if key.Kind() != reflect.String {
+				continue
+			}
+
+			fields[key.String()] = reflectToValue(value)
 		}
 	}
+
 	return Value{
 		Type: NativeObjectValue,
 		Data: &NativeObject{
@@ -164,5 +171,41 @@ func GetNativeObjectValue(name string, data any) Value {
 			Data:   data,
 			Fields: fields,
 		},
+	}
+}
+
+func reflectToValue(v reflect.Value) Value {
+	switch v.Kind() {
+	case reflect.String:
+		return GetStringValue(v.String())
+
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return GetIntValue(int(v.Int()))
+
+	case reflect.Bool:
+		return GetBoolValue(v.Bool())
+
+	case reflect.Float32, reflect.Float64:
+		return GetIntValue(int(v.Float())) // если есть
+
+	case reflect.Map:
+		obj := make(map[string]Value)
+
+		iter := v.MapRange()
+		for iter.Next() {
+			if iter.Key().Kind() == reflect.String {
+				obj[iter.Key().String()] = reflectToValue(iter.Value())
+			}
+		}
+
+		return Value{
+			Type: NativeObjectValue,
+			Data: &NativeObject{
+				Fields: obj,
+			},
+		}
+
+	default:
+		return GetNullValue()
 	}
 }

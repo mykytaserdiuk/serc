@@ -13,7 +13,4 @@ func main():
      
      def err = http.serve(":8080")
      printf("err: %v \n", err)
-     for (1==1) 
-          print("tick \n")
-     end
 end

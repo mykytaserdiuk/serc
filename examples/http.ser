@@ -1,0 +1,15 @@
+use http
+func handler(m, body, req):
+    printf("\n%+v\n %+v\n %+v\n", m, body.hi, req.Header)
+    return "Test"
+end
+func main():
+    def code = http.handle("/", handler)
+    printf("err : %+v", code)
+    def err = http.serve(":8080")
+    printf("err : %s", err)
+    
+    while(1==1):
+
+    end
+end
