@@ -173,9 +173,15 @@ func (i *Interpreter) exressionExecute(statements []ast.Statement) ast.FuncResul
 			conditions := i.eval(s.Conditions)
 			binaryConditionResult := conditions.Data.(bool)
 			if binaryConditionResult {
-				i.exressionExecute(s.Then.Statements)
+				res := i.exressionExecute(s.Then.Statements)
+				if res.Value != nil {
+					return res
+				}
 			} else if !binaryConditionResult && len(s.Then.Statements) > 0 {
-				i.exressionExecute(s.Else.Statements)
+				res := i.exressionExecute(s.Else.Statements)
+				if res.Value != nil {
+					return res
+				}
 			}
 		case ast.Loop:
 			conditions := i.eval(s.Conditions)

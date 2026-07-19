@@ -1,15 +1,28 @@
 use http
-func handler(m, body, req):
-    printf("\n%+v\n %+v\n %+v\n", m, body.hi, req.Header)
-    return "Test"
+
+struct Response (
+    status
+    body
+)
+
+func index(m, body, req):
+    if (m == "POST") then
+        return "Post"
+    end
+    if (m == "GET") then
+        return Response(
+            status: 500
+            body: "GET"
+        )
+    end  
+
+    printf("\n%+v\n", m)
+    return "NotFound"
 end
+
 func main():
-    def code = http.handle("/", handler)
+    def code = http.handle("/", index)
     printf("err : %+v", code)
     def err = http.serve(":8080")
     printf("err : %s", err)
-    
-    while(1==1):
-
-    end
 end

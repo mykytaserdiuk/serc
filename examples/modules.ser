@@ -5,11 +5,14 @@ func index(body):
      return "TEST"
 end
 
+; TODO: replace http.get & http.post with http.handle
 func main():
+     printf("math.add: %+v \n", math.add(1, 5))
+
      def out = http.get("/", index)
-     printf("out: %s \n", out)
+     printf("out: %+v \n", out)
      out = http.post("/new", index)
-     printf("out: %s \n", out)
+     printf("out: %+v \n", out)
      
      def err = http.serve(":8080")
      printf("err: %v \n", err)

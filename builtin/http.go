@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/mykytaserdiuk/serc/ast"
 	"github.com/mykytaserdiuk/serc/runtime"
 )
@@ -40,7 +41,20 @@ func HttpHandle(args []ast.Value) ast.FuncResult {
 			ast.GetNativeObjectValue("body", body),
 			ast.GetNativeObjectValue("request", r),
 		})
-		w.Write([]byte(ret.Data.(string)))
+
+		obj := ret.Data.(ast.Object)
+
+		var returnMap map[string]ast.Value
+		err := mapstructure.Decode(obj.Fields, &returnMap)
+		if err != nil {
+			// todo write error
+		}
+		b, err := json.Marshal(returnMap["body"].Data)
+		if err != nil {
+			// todo write error
+		}
+		w.WriteHeader(returnMap["status"].Data.(int))
+		w.Write(b)
 	})
 
 	return ast.FuncResult{
