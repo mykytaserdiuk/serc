@@ -1,6 +1,9 @@
 package ast
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 type Expression interface {
 	Node
@@ -20,6 +23,12 @@ type Variable struct {
 
 type Object struct {
 	Type   *Structure
+	Fields map[string]Value
+}
+
+type NativeObject struct {
+	Name   string
+	Data   any
 	Fields map[string]Value
 }
 
@@ -66,6 +75,7 @@ const (
 	BoolValue
 	NullValue
 	ObjectValue
+	NativeObjectValue
 	FuncValue
 )
 
@@ -84,6 +94,8 @@ func (StringLiteral) expression() {}
 func (Binary) expression()        {}
 func (FuncResult) expression()    {}
 func (FieldAccess) expression()   {}
+
+// func (NativeObject) expression()  {}
 
 // //func (Variable) expression(){}
 
@@ -113,5 +125,44 @@ func GetNullValue() Value {
 	return Value{
 		Type: NullValue,
 		Data: "null",
+	}
+}
+
+func GetNativeObjectValue(name string, data any) Value {
+	fields := make(map[string]Value)
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Pointer {
+		v = v.Elem()
+	}
+
+	t := v.Type()
+	for idx := 0; idx < v.NumField(); idx++ {
+		fieldName := t.Field(idx).Name
+		fieldValue := v.Field(idx)
+
+		switch fieldValue.Kind() {
+		case reflect.String:
+			fields[fieldName] = GetStringValue(
+				fieldValue.String(),
+			)
+		case reflect.Int:
+			fields[fieldName] = GetIntValue(
+				int(fieldValue.Int()),
+			)
+		case reflect.Bool:
+			fields[fieldName] = GetBoolValue(
+				fieldValue.Bool(),
+			)
+		default:
+			fields[fieldName] = GetNullValue()
+		}
+	}
+	return Value{
+		Type: NativeObjectValue,
+		Data: &NativeObject{
+			Name:   name,
+			Data:   data,
+			Fields: fields,
+		},
 	}
 }

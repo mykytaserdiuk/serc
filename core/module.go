@@ -5,7 +5,7 @@ import (
 	"path"
 
 	"github.com/mykytaserdiuk/serc/ast"
-	"github.com/mykytaserdiuk/serc/buildin"
+	"github.com/mykytaserdiuk/serc/builtin"
 	"github.com/mykytaserdiuk/serc/runtime"
 )
 
@@ -18,7 +18,7 @@ var (
 )
 
 func (l *ModuleLoader) Init(rt runtime.Runtime) {
-	buildInModules["http"] = buildin.LoadHttp(rt)
+	buildInModules["http"] = builtin.LoadHttp(rt)
 }
 func (l *ModuleLoader) Load(name string) *ast.Program {
 	if p, ok := l.loaded[name]; ok {

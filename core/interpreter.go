@@ -62,6 +62,7 @@ func NewInterpreter(content string) *Interpreter {
 			},
 		})
 	}
+	fmt.Println()
 
 	return i
 }
@@ -256,9 +257,10 @@ func (i *Interpreter) eval(expr ast.Expression) ast.Value {
 			if !ok {
 				panic("field not found: " + name)
 			}
-
 			return field
-
+		case *ast.NativeObject:
+			obj := i.eval(e.Value)
+			return i.getField(obj, e.Name)
 		default:
 			panic("cannot access field " + name)
 		}
@@ -318,13 +320,37 @@ func (i *Interpreter) evalCall(c ast.Call) ast.Value {
 }
 
 func (i *Interpreter) callValue(fn ast.Value, args []ast.Value) ast.Value {
-	if fn.Type != ast.FuncValue {
+	switch fn.Type {
+	case ast.FuncValue:
+		f := fn.Data.(ast.FunctionValue).Func
+		return i.executeWithArgs(f, args)
+	default:
 		panic("not callable")
 	}
+}
 
-	f := fn.Data.(ast.FunctionValue).Func
+func (i *Interpreter) getField(obj ast.Value, name string) ast.Value {
+	switch v := obj.Data.(type) {
 
-	return i.executeWithArgs(f, args)
+	case *ast.Object:
+		field, ok := v.Fields[name]
+		if !ok {
+			panic("field not found: " + name)
+		}
+
+		return field
+
+	case *ast.NativeObject:
+		field, ok := v.Fields[name]
+		if !ok {
+			panic("native field not found: " + name)
+		}
+
+		return field
+
+	default:
+		panic("cannot access field " + name)
+	}
 }
 
 func (i *Interpreter) createStruct(str *ast.Structure, args []ast.Argument) ast.Value {

@@ -2,14 +2,13 @@ use math
 use http
 
 func index(body):
-     printf("body: %s", body)
      return "TEST"
 end
 
 func main():
-     printf("%+v\n", math.add(1, 5))
-
      def out = http.get("/", index)
+     printf("out: %s \n", out)
+     out = http.post("/new", index)
      printf("out: %s \n", out)
      
      def err = http.serve(":8080")

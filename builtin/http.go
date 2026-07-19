@@ -1,4 +1,4 @@
-package buildin
+package builtin
 
 import (
 	"net/http"
@@ -15,8 +15,30 @@ func LoadHttp(rt runtime.Runtime) map[string]ast.BuiltinFunc {
 	funcs := make(map[string]ast.BuiltinFunc)
 	funcs["serve"] = HttpServe
 	funcs["get"] = HttpGet
+	funcs["post"] = HttpPost
 	RT = rt
 	return funcs
+}
+func HttpPost(args []ast.Value) ast.FuncResult {
+	endpoint := args[0]
+	if endpoint.Type != ast.StringValue {
+		panic("RUNTIME ERROR: expected string value as first argument")
+	}
+	response := args[1]
+	if response.Type != ast.FuncValue {
+		panic("RUNTIME ERROR: expected func value as second argument")
+	}
+
+	http.HandleFunc(endpoint.Data.(string), func(w http.ResponseWriter, r *http.Request) {
+		ret := RT.Call(response, []ast.Value{
+			ast.GetNativeObjectValue("request", r),
+		})
+		w.Write([]byte(ret.Data.(string)))
+	})
+
+	return ast.FuncResult{
+		Value: ast.NumberLiteral{Value: 0},
+	}
 }
 
 func HttpGet(args []ast.Value) ast.FuncResult {
@@ -29,11 +51,10 @@ func HttpGet(args []ast.Value) ast.FuncResult {
 		panic("RUNTIME ERROR: expected func value as second argument")
 	}
 
-	ret := RT.Call(response, []ast.Value{
-		ast.GetStringValue("hello"),
-	})
-
 	http.HandleFunc(endpoint.Data.(string), func(w http.ResponseWriter, r *http.Request) {
+		ret := RT.Call(response, []ast.Value{
+			ast.GetStringValue(r.URL.Query().Get("q")),
+		})
 		w.Write([]byte(ret.Data.(string)))
 	})
 
