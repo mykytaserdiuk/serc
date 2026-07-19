@@ -53,6 +53,7 @@
         h2 {
             border-bottom: 1px solid #ddd;
             padding-bottom: 5px;
+            margin-top: 40px;
         }
 
         code {
@@ -72,6 +73,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            margin: 15px 0;
         }
 
         td,
@@ -88,6 +90,7 @@
             background: #eef5ff;
             border-left: 4px solid #3b82f6;
             padding: 10px;
+            margin: 15px 0;
         }
 
         footer {
@@ -136,7 +139,7 @@
         <a href="#syntax">Syntax</a>
         <a href="#functions">Functions</a>
         <a href="#structures">Structures</a>
-        <a href="#modules">Modules</a>
+        <a href="#modules">Modules & Native Extensions</a>
         <a href="#todo">TODO</a>
         <a href="#installation">Installation</a>
     </nav>
@@ -156,7 +159,7 @@
 
         <p>
             The goal of SER is to provide a simple syntax and lightweight runtime
-            while still supporting functions, structures and modules.
+            while still supporting functions, structures, modules, and native Go extensions.
         </p>
 
         <h3>Hello World</h3>
@@ -257,7 +260,11 @@ end
                 <td>Object</td>
                 <td>Structures and complex values</td>
             </tr>
-
+ 
+           <tr>
+                <td>Native object</td>
+                <td>Structures and complex values from native go funcs</td>
+            </tr>
         </table>
 
         <h2 id="functions">Functions</h2>
@@ -416,15 +423,15 @@ print(user.first_name)
 
 </pre>
 
-        <h2 id="modules">Modules</h2>
+        <h2 id="modules">Modules & Native Extensions</h2>
 
         <p>
-            Modules allow splitting programs into separate files.
+            Modules allow splitting programs into separate files and extending the language using Go.
         </p>
 
-
+        <h3>1. SER Modules</h3>
         <p>
-            Modules are stored inside the <code>modules/</code> directory.
+            Standard modules are stored inside the <code>modules/</code> directory as <code>.ser</code> files.
         </p>
 
         Example structure:
@@ -436,51 +443,64 @@ project/
     modules/
         math.ser
 </pre>
+        <p>Importing a standard module:</p>
+        <pre>use math</pre>
 
-
-
-        <h3>Import module</h3>
-
-
-        <pre>
-use math
-</pre>
-
-
-        Example:
-
-
+        <p>Usage example:</p>
         <pre>
 ; modules/math.ser
-
 func add(a, b):
     return a + b
 end
-</pre>
 
-
-        Usage:
-
-        <pre>
+; main.ser
 use math
-
 func main():
     printf("%+v\n", math.add(1,5))
 end
 </pre>
-
-
-
-        <h3>Module aliases</h3>
-
+<h3>2. Native Go Built-ins</h3>
         <p>
-            A module can have an alias.
-            The alias becomes the name used inside the program.
+            SER now supports <b>Native Go Extensions</b>. You can write high-performance built-in functions directly in Go and expose them to the SER runtime.
         </p>
 
+        <div class="note">
+            All native built-in methods and definitions are located inside the <code>/builtin/</code> directory of the project. This is also the best place to look for practical examples and see how to create and register your own custom native modules.
+        </div>
+
+        <p>
+            This extension system is ideal for adding complex algorithms, file I/O, or networking features to the language using Go's ecosystem.
+        </p>
+
+        <p>Example of defining a native function in Go:</p>
+        <pre>
+// Inside the Go interpreter codebase
+func HttpServe(args []ast.Value) ast.FuncResult {
+	port := args[0]
+	if port.Type != ast.StringValue {
+		panic("RUNTIME ERROR: unsoportet 'http.serve' type")
+	}
+	err := http.ListenAndServe(port.Data.(string), nil)
+	if err != nil {
+		return ast.FuncResult{
+			Value: ast.StringLiteral{
+				Value: err.Error(),
+			},
+		}
+	}
+	return ast.FuncResult{
+		Value: ast.NumberLiteral{Value: 0},
+	}
+}
+</pre>
+
+        <h3>Module Aliases</h3>
+        <p>
+            Any module (SER or Native) can have an alias. The alias becomes the namespace identifier inside the program.
+        </p>
 
         <pre>
-use math calculator
+use math "calculator"
 
 func main():
     calculator.add(1,5)
@@ -499,8 +519,12 @@ end
                 <th>Status</th>
             </tr>
             <tr>
-                <td>More built-in functions</td>
-                <td>Planned</td>
+                <td>Native Go Built-in Functions support</td>
+                <td><strong>Released / Active</strong></td>
+            </tr>
+            <tr>
+                <td>More built-in functions (Standard library)</td>
+                <td>In Progress (Writing via Go)</td>
             </tr>
             <tr>
                 <td>Better module export system</td>
@@ -514,14 +538,6 @@ end
                 <td>More data structures</td>
                 <td>Planned</td>
             </tr>
-            <tr>
-                <td>Standard library</td>
-                <td>Planned</td>
-            </tr>
-            <!-- <tr>
-                <td>Package manager</td>
-                <td>Future</td>
-            </tr> -->
         </table>
 
         <h2>Built-in Functions</h2>
